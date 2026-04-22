@@ -1,0 +1,106 @@
+name: ShhcribbleiOS
+options:
+  bundleIdPrefix: com.tiurihartog
+  deploymentTarget:
+    iOS: "18.0"
+  createIntermediateGroups: true
+
+packages:
+  FluidAudio:
+    url: https://github.com/FluidInference/FluidAudio.git
+    branch: main
+
+targets:
+  ShhcribbleShared:
+    type: framework
+    platform: iOS
+    sources:
+      - path: ShhcribbleShared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.tiurihartog.shhcribble.shared
+        SWIFT_VERSION: "5.9"
+        IPHONEOS_DEPLOYMENT_TARGET: "18.0"
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: YES
+        SKIP_INSTALL: YES
+        DEFINES_MODULE: YES
+        BUILD_LIBRARY_FOR_DISTRIBUTION: NO
+
+  ShhcribbleiOS:
+    type: application
+    platform: iOS
+    sources:
+      - path: ShhcribbleiOS
+        excludes:
+          - Info.plist
+          - ShhcribbleiOS.entitlements
+    resources:
+      - ShhcribbleiOS/Resources/Assets.xcassets
+    info:
+      path: ShhcribbleiOS/Info.plist
+      properties:
+        CFBundleDisplayName: Shhcribble
+        CFBundleShortVersionString: "1.0.0"
+        CFBundleVersion: "1"
+        CFBundleURLTypes:
+          - CFBundleURLName: com.tiurihartog.shhcribble
+            CFBundleURLSchemes:
+              - shhcribble
+        LSRequiresIPhoneOS: true
+        NSMicrophoneUsageDescription: "Shhcribble records audio to transcribe your speech. Recording only happens when you trigger it."
+        NSSupportsLiveActivities: true
+        UIBackgroundModes:
+          - audio
+        UILaunchScreen: {}
+        UIRequiredDeviceCapabilities:
+          - armv7
+          - microphone
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+    entitlements:
+      path: ShhcribbleiOS/ShhcribbleiOS.entitlements
+      properties: {}
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.tiurihartog.shhcribble
+        TARGETED_DEVICE_FAMILY: "1"
+        SWIFT_VERSION: "5.9"
+        IPHONEOS_DEPLOYMENT_TARGET: "18.0"
+        CODE_SIGN_STYLE: Automatic
+        ENABLE_USER_SCRIPT_SANDBOXING: YES
+        GENERATE_INFOPLIST_FILE: NO
+    dependencies:
+      - target: ShhcribbleShared
+        embed: true
+      - package: FluidAudio
+        product: FluidAudio
+      - target: ShhcribbleWidget
+        embed: true
+
+  ShhcribbleWidget:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: ShhcribbleWidget
+    info:
+      path: ShhcribbleWidget/Info.plist
+      properties:
+        CFBundleDisplayName: Shhcribble Widget
+        CFBundleShortVersionString: "1.0.0"
+        CFBundleVersion: "1"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.tiurihartog.shhcribble.widget
+        TARGETED_DEVICE_FAMILY: "1"
+        SWIFT_VERSION: "5.9"
+        IPHONEOS_DEPLOYMENT_TARGET: "18.0"
+        CODE_SIGN_STYLE: Automatic
+        ENABLE_USER_SCRIPT_SANDBOXING: YES
+        GENERATE_INFOPLIST_FILE: NO
+        SKIP_INSTALL: YES
+    dependencies:
+      - target: ShhcribbleShared
+        embed: false

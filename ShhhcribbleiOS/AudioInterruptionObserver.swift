@@ -23,7 +23,7 @@ final class AudioInterruptionObserver {
 
         switch type {
         case .began:
-            print("[Shhcribble] Audio session interrupted — stopping")
+            print("[Shhhcribble] Audio session interrupted — stopping")
             Task { await TranscriptionService.shared.stopRecording() }
         case .ended:
             break

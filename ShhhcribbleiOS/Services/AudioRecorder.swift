@@ -15,7 +15,7 @@ final class AudioRecorder {
 
         let inputNode = engine.inputNode
         let format = inputNode.outputFormat(forBus: 0)
-        print("[Shhcribble] Mic format: \(format.sampleRate)Hz, \(format.channelCount)ch, \(format.commonFormat.rawValue)")
+        print("[Shhhcribble] Mic format: \(format.sampleRate)Hz, \(format.channelCount)ch, \(format.commonFormat.rawValue)")
 
         var bufferIndex = 0
         inputNode.installTap(onBus: 0, bufferSize: 2560, format: format) { [weak self] buffer, _ in
@@ -26,7 +26,7 @@ final class AudioRecorder {
                     var sum: Float = 0
                     for i in 0..<count { sum += ch[i] * ch[i] }
                     let rms = sqrt(sum / Float(max(count, 1)))
-                    print("[Shhcribble] buf #\(bufferIndex) frames=\(count) rms=\(rms)")
+                    print("[Shhhcribble] buf #\(bufferIndex) frames=\(count) rms=\(rms)")
                 }
             }
             self?.onBuffer?(buffer)

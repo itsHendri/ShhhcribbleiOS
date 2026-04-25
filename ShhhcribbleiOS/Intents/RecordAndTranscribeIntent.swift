@@ -2,7 +2,7 @@ import AppIntents
 
 @available(iOS 18.0, *)
 struct RecordAndTranscribeIntent: AppIntent {
-    static var title: LocalizedStringResource = "Shhcribble: Record & Transcribe"
+    static var title: LocalizedStringResource = "Shhhcribble: Record & Transcribe"
     static var description = IntentDescription(
         "Record audio and copy the transcription to the clipboard. Triggering while recording stops and copies immediately."
     )
@@ -22,7 +22,7 @@ struct RecordAndTranscribeIntent: AppIntent {
 }
 
 @available(iOS 18.0, *)
-struct ShhcribbleAppShortcuts: AppShortcutsProvider {
+struct ShhhcribbleAppShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
             intent: RecordAndTranscribeIntent(),

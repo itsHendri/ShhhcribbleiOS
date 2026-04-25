@@ -9,28 +9,28 @@
 /* Begin PBXBuildFile section */
 		2A406DC7E810C2F8A28B3895 /* TranscriptionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FF33C3D012E5C475DB3BB2D /* TranscriptionStore.swift */; };
 		2F887E8DA4DD072E74AD74ED /* StopRecordingIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7497F3D36545C9CB105CD271 /* StopRecordingIntent.swift */; };
-		363654E31B04A8FF93F14165 /* ShhcribbleWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48655FF65712F5B4E6613C69 /* ShhcribbleWidgetBundle.swift */; };
-		3CC61D91B14126E6C3502C2F /* ShhcribbleActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD398391E76E0664A3315980 /* ShhcribbleActivityAttributes.swift */; };
+		363654E31B04A8FF93F14165 /* ShhhcribbleWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48655FF65712F5B4E6613C69 /* ShhhcribbleWidgetBundle.swift */; };
+		3CC61D91B14126E6C3502C2F /* ShhhcribbleActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD398391E76E0664A3315980 /* ShhhcribbleActivityAttributes.swift */; };
 		45ACB07331A3D775FBF8DC93 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0B97EB92EFCBB901B5B0901F /* Assets.xcassets */; };
-		4BD5F6128857510088CCF3B8 /* ShhcribbleiOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0ED76D68CAFA038A1D01E9D4 /* ShhcribbleiOSApp.swift */; };
+		4BD5F6128857510088CCF3B8 /* ShhhcribbleiOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0ED76D68CAFA038A1D01E9D4 /* ShhhcribbleiOSApp.swift */; };
 		4CD2EC9DDA775EC8964BE16A /* RecordingOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7D0110541C3448E34E05DFD /* RecordingOverlayView.swift */; };
 		5F03E2DFA3EF88934A633283 /* RecordAndTranscribeIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF08F9C6A9CAD55F52BA2AFC /* RecordAndTranscribeIntent.swift */; };
 		63A79F11ADE49ADDC24838DB /* AudioInterruptionObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9ECB9C013389743F0EED2C97 /* AudioInterruptionObserver.swift */; };
-		7E4078A1BAFF4AC13257FAC4 /* ShhcribbleWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C7FB72A0973DDD7A59D6B2CB /* ShhcribbleWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		83B61482CACD1D8CFB5F40A5 /* ShhcribbleShared.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2CA1432358105C38CCDB05F4 /* ShhcribbleShared.framework */; };
-		877134D37BCEC45706CEC616 /* ShhcribbleShared.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2CA1432358105C38CCDB05F4 /* ShhcribbleShared.framework */; };
+		7E4078A1BAFF4AC13257FAC4 /* ShhhcribbleWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C7FB72A0973DDD7A59D6B2CB /* ShhhcribbleWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		83B61482CACD1D8CFB5F40A5 /* ShhhcribbleShared.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2CA1432358105C38CCDB05F4 /* ShhhcribbleShared.framework */; };
+		877134D37BCEC45706CEC616 /* ShhhcribbleShared.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2CA1432358105C38CCDB05F4 /* ShhhcribbleShared.framework */; };
 		A44304CE412B9E7F9D2CE672 /* AudioRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3013E7D0AAECF4DC1FE26BF0 /* AudioRecorder.swift */; };
-		BE1E53A20F5E57CD08899073 /* ShhcribbleActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FBF6325AF5A6F5248F868E1 /* ShhcribbleActivityManager.swift */; };
+		BE1E53A20F5E57CD08899073 /* ShhhcribbleActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FBF6325AF5A6F5248F868E1 /* ShhhcribbleActivityManager.swift */; };
 		CBB8000EFDCABFDB89A813CB /* TranscriptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9117E88BE0377DFF7803956D /* TranscriptionService.swift */; };
 		CBBDE0372D1F06A18A0E0A7B /* TranscriptionEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEF43EB6F8714B78016124BE /* TranscriptionEntry.swift */; };
 		D282B6B5EFAD943E38D32C25 /* FillerWordFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E721E2095D73F1DA4CCFAE /* FillerWordFilter.swift */; };
 		D6FB2837D2A70EBFB394B493 /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 322DC7721096EE901B7C9EDA /* FluidAudio */; };
 		E36F3035ADEEEF864FE6C304 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FCBB2C737046622D137BCBD /* HistoryView.swift */; };
 		E5155BC1C7AF53E093FBAF09 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55DE03FE06B045CD5667CC3A /* ContentView.swift */; };
-		E8F1BBA1F2926B3AF98AE4C8 /* ShhcribbleShared.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 2CA1432358105C38CCDB05F4 /* ShhcribbleShared.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		E8F1BBA1F2926B3AF98AE4C8 /* ShhhcribbleShared.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 2CA1432358105C38CCDB05F4 /* ShhhcribbleShared.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F6CD630D0562209EB780C27B /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FE1D5FE8404366CEE4CCAC1 /* SettingsView.swift */; };
 		F8EEADD1D8054C42A77EC43D /* AudioSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15A95FBD3DF15FF215E5A6B5 /* AudioSessionManager.swift */; };
-		FFC58E3C1707D38F9521F68C /* ShhcribbleLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C33F02097A302D4BABC8FDA /* ShhcribbleLiveActivity.swift */; };
+		FFC58E3C1707D38F9521F68C /* ShhhcribbleLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C33F02097A302D4BABC8FDA /* ShhhcribbleLiveActivity.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -39,21 +39,21 @@
 			containerPortal = 7A7552FAD51AB81AC63301A5 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 138FA9ECC6621CF9E5C477E8;
-			remoteInfo = ShhcribbleWidget;
+			remoteInfo = ShhhcribbleWidget;
 		};
 		71115207AA65C1937F2584A4 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 7A7552FAD51AB81AC63301A5 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = A272AC2C339EB97E98F30532;
-			remoteInfo = ShhcribbleShared;
+			remoteInfo = ShhhcribbleShared;
 		};
 		F5CF18F9F5514D13E5B29ED6 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 7A7552FAD51AB81AC63301A5 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = A272AC2C339EB97E98F30532;
-			remoteInfo = ShhcribbleShared;
+			remoteInfo = ShhhcribbleShared;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -64,7 +64,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				7E4078A1BAFF4AC13257FAC4 /* ShhcribbleWidget.appex in Embed Foundation Extensions */,
+				7E4078A1BAFF4AC13257FAC4 /* ShhhcribbleWidget.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -75,7 +75,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				E8F1BBA1F2926B3AF98AE4C8 /* ShhcribbleShared.framework in Embed Frameworks */,
+				E8F1BBA1F2926B3AF98AE4C8 /* ShhhcribbleShared.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -84,16 +84,16 @@
 
 /* Begin PBXFileReference section */
 		0B97EB92EFCBB901B5B0901F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		0ED76D68CAFA038A1D01E9D4 /* ShhcribbleiOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShhcribbleiOSApp.swift; sourceTree = "<group>"; };
+		0ED76D68CAFA038A1D01E9D4 /* ShhhcribbleiOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShhhcribbleiOSApp.swift; sourceTree = "<group>"; };
 		15A95FBD3DF15FF215E5A6B5 /* AudioSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSessionManager.swift; sourceTree = "<group>"; };
-		1FBF6325AF5A6F5248F868E1 /* ShhcribbleActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShhcribbleActivityManager.swift; sourceTree = "<group>"; };
-		281F020117E60ACA060E80C7 /* ShhcribbleiOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ShhcribbleiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		2CA1432358105C38CCDB05F4 /* ShhcribbleShared.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = ShhcribbleShared.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		1FBF6325AF5A6F5248F868E1 /* ShhhcribbleActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShhhcribbleActivityManager.swift; sourceTree = "<group>"; };
+		281F020117E60ACA060E80C7 /* ShhhcribbleiOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ShhhcribbleiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		2CA1432358105C38CCDB05F4 /* ShhhcribbleShared.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = ShhhcribbleShared.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		3013E7D0AAECF4DC1FE26BF0 /* AudioRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRecorder.swift; sourceTree = "<group>"; };
-		48655FF65712F5B4E6613C69 /* ShhcribbleWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShhcribbleWidgetBundle.swift; sourceTree = "<group>"; };
+		48655FF65712F5B4E6613C69 /* ShhhcribbleWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShhhcribbleWidgetBundle.swift; sourceTree = "<group>"; };
 		4FF33C3D012E5C475DB3BB2D /* TranscriptionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionStore.swift; sourceTree = "<group>"; };
 		55DE03FE06B045CD5667CC3A /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		6C33F02097A302D4BABC8FDA /* ShhcribbleLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShhcribbleLiveActivity.swift; sourceTree = "<group>"; };
+		6C33F02097A302D4BABC8FDA /* ShhhcribbleLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShhhcribbleLiveActivity.swift; sourceTree = "<group>"; };
 		6FCBB2C737046622D137BCBD /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
 		7497F3D36545C9CB105CD271 /* StopRecordingIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopRecordingIntent.swift; sourceTree = "<group>"; };
 		8FE1D5FE8404366CEE4CCAC1 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -101,9 +101,9 @@
 		93E721E2095D73F1DA4CCFAE /* FillerWordFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FillerWordFilter.swift; sourceTree = "<group>"; };
 		9ECB9C013389743F0EED2C97 /* AudioInterruptionObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioInterruptionObserver.swift; sourceTree = "<group>"; };
 		A7D0110541C3448E34E05DFD /* RecordingOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingOverlayView.swift; sourceTree = "<group>"; };
-		C7FB72A0973DDD7A59D6B2CB /* ShhcribbleWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShhcribbleWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		C7FB72A0973DDD7A59D6B2CB /* ShhhcribbleWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShhhcribbleWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		CF08F9C6A9CAD55F52BA2AFC /* RecordAndTranscribeIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordAndTranscribeIntent.swift; sourceTree = "<group>"; };
-		DD398391E76E0664A3315980 /* ShhcribbleActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShhcribbleActivityAttributes.swift; sourceTree = "<group>"; };
+		DD398391E76E0664A3315980 /* ShhhcribbleActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShhhcribbleActivityAttributes.swift; sourceTree = "<group>"; };
 		E88895F715A5942F6B12C486 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		EEF43EB6F8714B78016124BE /* TranscriptionEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionEntry.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -113,7 +113,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				83B61482CACD1D8CFB5F40A5 /* ShhcribbleShared.framework in Frameworks */,
+				83B61482CACD1D8CFB5F40A5 /* ShhhcribbleShared.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -121,7 +121,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				877134D37BCEC45706CEC616 /* ShhcribbleShared.framework in Frameworks */,
+				877134D37BCEC45706CEC616 /* ShhhcribbleShared.framework in Frameworks */,
 				D6FB2837D2A70EBFB394B493 /* FluidAudio in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -129,22 +129,22 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		0E504F1DEE38062C8C6E65EB /* ShhcribbleWidget */ = {
+		0E504F1DEE38062C8C6E65EB /* ShhhcribbleWidget */ = {
 			isa = PBXGroup;
 			children = (
 				E88895F715A5942F6B12C486 /* Info.plist */,
-				6C33F02097A302D4BABC8FDA /* ShhcribbleLiveActivity.swift */,
-				48655FF65712F5B4E6613C69 /* ShhcribbleWidgetBundle.swift */,
+				6C33F02097A302D4BABC8FDA /* ShhhcribbleLiveActivity.swift */,
+				48655FF65712F5B4E6613C69 /* ShhhcribbleWidgetBundle.swift */,
 			);
-			path = ShhcribbleWidget;
+			path = ShhhcribbleWidget;
 			sourceTree = "<group>";
 		};
-		1315C35B3B0A4CA466B8F31F /* ShhcribbleiOS */ = {
+		1315C35B3B0A4CA466B8F31F /* ShhhcribbleiOS */ = {
 			isa = PBXGroup;
 			children = (
 				9ECB9C013389743F0EED2C97 /* AudioInterruptionObserver.swift */,
 				15A95FBD3DF15FF215E5A6B5 /* AudioSessionManager.swift */,
-				0ED76D68CAFA038A1D01E9D4 /* ShhcribbleiOSApp.swift */,
+				0ED76D68CAFA038A1D01E9D4 /* ShhhcribbleiOSApp.swift */,
 				330D62FB8BEF03CED029E7C7 /* Intents */,
 				DF6DB98E9E4D5DA4412FED19 /* Models */,
 				E3813F345E00054A9EA4A08F /* Resources */,
@@ -152,7 +152,7 @@
 				2132749FD9E41CC33C7E05B8 /* Utilities */,
 				62B4389F409044F8B8E4D7B0 /* Views */,
 			);
-			path = ShhcribbleiOS;
+			path = ShhhcribbleiOS;
 			sourceTree = "<group>";
 		};
 		2132749FD9E41CC33C7E05B8 /* Utilities */ = {
@@ -175,7 +175,7 @@
 			isa = PBXGroup;
 			children = (
 				3013E7D0AAECF4DC1FE26BF0 /* AudioRecorder.swift */,
-				1FBF6325AF5A6F5248F868E1 /* ShhcribbleActivityManager.swift */,
+				1FBF6325AF5A6F5248F868E1 /* ShhhcribbleActivityManager.swift */,
 				9117E88BE0377DFF7803956D /* TranscriptionService.swift */,
 			);
 			path = Services;
@@ -195,9 +195,9 @@
 		6C80E257F20664920DDB51AE /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				281F020117E60ACA060E80C7 /* ShhcribbleiOS.app */,
-				2CA1432358105C38CCDB05F4 /* ShhcribbleShared.framework */,
-				C7FB72A0973DDD7A59D6B2CB /* ShhcribbleWidget.appex */,
+				281F020117E60ACA060E80C7 /* ShhhcribbleiOS.app */,
+				2CA1432358105C38CCDB05F4 /* ShhhcribbleShared.framework */,
+				C7FB72A0973DDD7A59D6B2CB /* ShhhcribbleWidget.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -205,20 +205,20 @@
 		914E67F5AFD1AE72DF65D648 = {
 			isa = PBXGroup;
 			children = (
-				1315C35B3B0A4CA466B8F31F /* ShhcribbleiOS */,
-				AA27300CF83C8109CB707860 /* ShhcribbleShared */,
-				0E504F1DEE38062C8C6E65EB /* ShhcribbleWidget */,
+				1315C35B3B0A4CA466B8F31F /* ShhhcribbleiOS */,
+				AA27300CF83C8109CB707860 /* ShhhcribbleShared */,
+				0E504F1DEE38062C8C6E65EB /* ShhhcribbleWidget */,
 				6C80E257F20664920DDB51AE /* Products */,
 			);
 			sourceTree = "<group>";
 		};
-		AA27300CF83C8109CB707860 /* ShhcribbleShared */ = {
+		AA27300CF83C8109CB707860 /* ShhhcribbleShared */ = {
 			isa = PBXGroup;
 			children = (
-				DD398391E76E0664A3315980 /* ShhcribbleActivityAttributes.swift */,
+				DD398391E76E0664A3315980 /* ShhhcribbleActivityAttributes.swift */,
 				7497F3D36545C9CB105CD271 /* StopRecordingIntent.swift */,
 			);
-			path = ShhcribbleShared;
+			path = ShhhcribbleShared;
 			sourceTree = "<group>";
 		};
 		DF6DB98E9E4D5DA4412FED19 /* Models */ = {
@@ -241,9 +241,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		138FA9ECC6621CF9E5C477E8 /* ShhcribbleWidget */ = {
+		138FA9ECC6621CF9E5C477E8 /* ShhhcribbleWidget */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 0DAF568878755D5EF916198B /* Build configuration list for PBXNativeTarget "ShhcribbleWidget" */;
+			buildConfigurationList = 0DAF568878755D5EF916198B /* Build configuration list for PBXNativeTarget "ShhhcribbleWidget" */;
 			buildPhases = (
 				19C76AD9E2AD2338A163AF45 /* Sources */,
 				1587337BB9CFE6F0945A55F7 /* Frameworks */,
@@ -253,16 +253,16 @@
 			dependencies = (
 				A03202E8E10745DDF8C39FFD /* PBXTargetDependency */,
 			);
-			name = ShhcribbleWidget;
+			name = ShhhcribbleWidget;
 			packageProductDependencies = (
 			);
-			productName = ShhcribbleWidget;
-			productReference = C7FB72A0973DDD7A59D6B2CB /* ShhcribbleWidget.appex */;
+			productName = ShhhcribbleWidget;
+			productReference = C7FB72A0973DDD7A59D6B2CB /* ShhhcribbleWidget.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
-		915F25D12B884E34B46EE54F /* ShhcribbleiOS */ = {
+		915F25D12B884E34B46EE54F /* ShhhcribbleiOS */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = CE1046BB65D1D9B4D04732C6 /* Build configuration list for PBXNativeTarget "ShhcribbleiOS" */;
+			buildConfigurationList = CE1046BB65D1D9B4D04732C6 /* Build configuration list for PBXNativeTarget "ShhhcribbleiOS" */;
 			buildPhases = (
 				8AF5241BFFB4C30903BE83E7 /* Sources */,
 				7B04AEDCF05E8AE0B64C83C6 /* Resources */,
@@ -276,17 +276,17 @@
 				8054FE0556C25017844EF938 /* PBXTargetDependency */,
 				21D67B0D6D0729A39D2C5003 /* PBXTargetDependency */,
 			);
-			name = ShhcribbleiOS;
+			name = ShhhcribbleiOS;
 			packageProductDependencies = (
 				322DC7721096EE901B7C9EDA /* FluidAudio */,
 			);
-			productName = ShhcribbleiOS;
-			productReference = 281F020117E60ACA060E80C7 /* ShhcribbleiOS.app */;
+			productName = ShhhcribbleiOS;
+			productReference = 281F020117E60ACA060E80C7 /* ShhhcribbleiOS.app */;
 			productType = "com.apple.product-type.application";
 		};
-		A272AC2C339EB97E98F30532 /* ShhcribbleShared */ = {
+		A272AC2C339EB97E98F30532 /* ShhhcribbleShared */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 2A1AC38CB1DE9432BFF93BF3 /* Build configuration list for PBXNativeTarget "ShhcribbleShared" */;
+			buildConfigurationList = 2A1AC38CB1DE9432BFF93BF3 /* Build configuration list for PBXNativeTarget "ShhhcribbleShared" */;
 			buildPhases = (
 				99F9141FFAAF46209B4B5621 /* Sources */,
 			);
@@ -294,11 +294,11 @@
 			);
 			dependencies = (
 			);
-			name = ShhcribbleShared;
+			name = ShhhcribbleShared;
 			packageProductDependencies = (
 			);
-			productName = ShhcribbleShared;
-			productReference = 2CA1432358105C38CCDB05F4 /* ShhcribbleShared.framework */;
+			productName = ShhhcribbleShared;
+			productReference = 2CA1432358105C38CCDB05F4 /* ShhhcribbleShared.framework */;
 			productType = "com.apple.product-type.framework";
 		};
 /* End PBXNativeTarget section */
@@ -321,7 +321,7 @@
 					};
 				};
 			};
-			buildConfigurationList = FD57D8B4A82FE4635B88BEBA /* Build configuration list for PBXProject "ShhcribbleiOS" */;
+			buildConfigurationList = FD57D8B4A82FE4635B88BEBA /* Build configuration list for PBXProject "ShhhcribbleiOS" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -338,9 +338,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				A272AC2C339EB97E98F30532 /* ShhcribbleShared */,
-				138FA9ECC6621CF9E5C477E8 /* ShhcribbleWidget */,
-				915F25D12B884E34B46EE54F /* ShhcribbleiOS */,
+				A272AC2C339EB97E98F30532 /* ShhhcribbleShared */,
+				138FA9ECC6621CF9E5C477E8 /* ShhhcribbleWidget */,
+				915F25D12B884E34B46EE54F /* ShhhcribbleiOS */,
 			);
 		};
 /* End PBXProject section */
@@ -361,8 +361,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				FFC58E3C1707D38F9521F68C /* ShhcribbleLiveActivity.swift in Sources */,
-				363654E31B04A8FF93F14165 /* ShhcribbleWidgetBundle.swift in Sources */,
+				FFC58E3C1707D38F9521F68C /* ShhhcribbleLiveActivity.swift in Sources */,
+				363654E31B04A8FF93F14165 /* ShhhcribbleWidgetBundle.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -379,8 +379,8 @@
 				5F03E2DFA3EF88934A633283 /* RecordAndTranscribeIntent.swift in Sources */,
 				4CD2EC9DDA775EC8964BE16A /* RecordingOverlayView.swift in Sources */,
 				F6CD630D0562209EB780C27B /* SettingsView.swift in Sources */,
-				BE1E53A20F5E57CD08899073 /* ShhcribbleActivityManager.swift in Sources */,
-				4BD5F6128857510088CCF3B8 /* ShhcribbleiOSApp.swift in Sources */,
+				BE1E53A20F5E57CD08899073 /* ShhhcribbleActivityManager.swift in Sources */,
+				4BD5F6128857510088CCF3B8 /* ShhhcribbleiOSApp.swift in Sources */,
 				CBBDE0372D1F06A18A0E0A7B /* TranscriptionEntry.swift in Sources */,
 				CBB8000EFDCABFDB89A813CB /* TranscriptionService.swift in Sources */,
 				2A406DC7E810C2F8A28B3895 /* TranscriptionStore.swift in Sources */,
@@ -391,7 +391,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				3CC61D91B14126E6C3502C2F /* ShhcribbleActivityAttributes.swift in Sources */,
+				3CC61D91B14126E6C3502C2F /* ShhhcribbleActivityAttributes.swift in Sources */,
 				2F887E8DA4DD072E74AD74ED /* StopRecordingIntent.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -401,17 +401,17 @@
 /* Begin PBXTargetDependency section */
 		21D67B0D6D0729A39D2C5003 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 138FA9ECC6621CF9E5C477E8 /* ShhcribbleWidget */;
+			target = 138FA9ECC6621CF9E5C477E8 /* ShhhcribbleWidget */;
 			targetProxy = 07C2DC478A303F0FB66AEE33 /* PBXContainerItemProxy */;
 		};
 		8054FE0556C25017844EF938 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = A272AC2C339EB97E98F30532 /* ShhcribbleShared */;
+			target = A272AC2C339EB97E98F30532 /* ShhhcribbleShared */;
 			targetProxy = F5CF18F9F5514D13E5B29ED6 /* PBXContainerItemProxy */;
 		};
 		A03202E8E10745DDF8C39FFD /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = A272AC2C339EB97E98F30532 /* ShhcribbleShared */;
+			target = A272AC2C339EB97E98F30532 /* ShhhcribbleShared */;
 			targetProxy = 71115207AA65C1937F2584A4 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -424,14 +424,14 @@
 				DEVELOPMENT_TEAM = 9W82X49JZS;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = ShhcribbleWidget/Info.plist;
+				INFOPLIST_FILE = ShhhcribbleWidget/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.tiurihartog.shhcribble.widget;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tiurihartog.shhhcribble.widget;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.9;
@@ -458,7 +458,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.tiurihartog.shhcribble.shared;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tiurihartog.shhhcribble.shared;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.9;
@@ -471,19 +471,19 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = ShhcribbleiOS/ShhcribbleiOS.entitlements;
+				CODE_SIGN_ENTITLEMENTS = ShhhcribbleiOS/ShhhcribbleiOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 9W82X49JZS;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = ShhcribbleiOS/Info.plist;
+				INFOPLIST_FILE = ShhhcribbleiOS/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.tiurihartog.shhcribble;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tiurihartog.shhhcribble;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.9;
 				TARGETED_DEVICE_FAMILY = 1;
@@ -509,7 +509,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.tiurihartog.shhcribble.shared;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tiurihartog.shhhcribble.shared;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.9;
@@ -585,19 +585,19 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = ShhcribbleiOS/ShhcribbleiOS.entitlements;
+				CODE_SIGN_ENTITLEMENTS = ShhhcribbleiOS/ShhhcribbleiOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 9W82X49JZS;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = ShhcribbleiOS/Info.plist;
+				INFOPLIST_FILE = ShhhcribbleiOS/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.tiurihartog.shhcribble;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tiurihartog.shhhcribble;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.9;
 				TARGETED_DEVICE_FAMILY = 1;
@@ -667,14 +667,14 @@
 				DEVELOPMENT_TEAM = 9W82X49JZS;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = ShhcribbleWidget/Info.plist;
+				INFOPLIST_FILE = ShhhcribbleWidget/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.tiurihartog.shhcribble.widget;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tiurihartog.shhhcribble.widget;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.9;
@@ -685,7 +685,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		0DAF568878755D5EF916198B /* Build configuration list for PBXNativeTarget "ShhcribbleWidget" */ = {
+		0DAF568878755D5EF916198B /* Build configuration list for PBXNativeTarget "ShhhcribbleWidget" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				1BE29740B5656B576CE0C5B2 /* Debug */,
@@ -694,7 +694,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		2A1AC38CB1DE9432BFF93BF3 /* Build configuration list for PBXNativeTarget "ShhcribbleShared" */ = {
+		2A1AC38CB1DE9432BFF93BF3 /* Build configuration list for PBXNativeTarget "ShhhcribbleShared" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				6F9D6D3CA997FE804B9C7C91 /* Debug */,
@@ -703,7 +703,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		CE1046BB65D1D9B4D04732C6 /* Build configuration list for PBXNativeTarget "ShhcribbleiOS" */ = {
+		CE1046BB65D1D9B4D04732C6 /* Build configuration list for PBXNativeTarget "ShhhcribbleiOS" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				BE2C0BF29CDF3B478FD2EE9A /* Debug */,
@@ -712,7 +712,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		FD57D8B4A82FE4635B88BEBA /* Build configuration list for PBXProject "ShhcribbleiOS" */ = {
+		FD57D8B4A82FE4635B88BEBA /* Build configuration list for PBXProject "ShhhcribbleiOS" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				88E9F6B9DA05DE9FB0F5CD16 /* Debug */,

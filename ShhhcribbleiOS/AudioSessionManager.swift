@@ -9,7 +9,7 @@ final class AudioSessionManager {
         do {
             try session.setCategory(.record, mode: .measurement, options: .duckOthers)
         } catch {
-            print("[Shhcribble] AudioSession configure failed: \(error)")
+            print("[Shhhcribble] AudioSession configure failed: \(error)")
         }
     }
 
@@ -17,7 +17,7 @@ final class AudioSessionManager {
         do {
             try AVAudioSession.sharedInstance().setActive(true, options: [])
         } catch {
-            print("[Shhcribble] AudioSession activate failed: \(error)")
+            print("[Shhhcribble] AudioSession activate failed: \(error)")
         }
     }
 

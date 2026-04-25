@@ -1,8 +1,8 @@
-import ShhcribbleShared
+import ShhhcribbleShared
 import SwiftUI
 
 @main
-struct ShhcribbleiOSApp: App {
+struct ShhhcribbleiOSApp: App {
     @StateObject private var status = TranscriptionStatus.shared
     @Environment(\.scenePhase) private var scenePhase
 
@@ -37,7 +37,7 @@ struct ShhcribbleiOSApp: App {
     }
 
     private func handle(url: URL) {
-        guard url.scheme?.lowercased() == "shhcribble" else { return }
+        guard url.scheme?.lowercased() == "shhhcribble" else { return }
         let action = (url.host ?? url.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))).lowercased()
 
         switch action {

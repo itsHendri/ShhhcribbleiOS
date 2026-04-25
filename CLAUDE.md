@@ -1,4 +1,4 @@
-# ShhcribbleiOS — Claude Code context
+# ShhhcribbleiOS — Claude Code context
 
 Read this at the start of every session. It is the single source of truth for architecture decisions and hard constraints. Don't relitigate anything marked **load-bearing** without a strong reason and a note added here.
 
@@ -19,13 +19,19 @@ A native iOS voice-to-text note-taking app. An external trigger (Control Center 
 
 ---
 
+## Naming
+
+The product is spelled **Shhhcribble** (three H's) in every context: code identifiers, filenames, folders, target names, bundle IDs, URL schemes, App Group IDs, user-facing strings, and prose. The two-H variant `Shhcribble` is wrong. The only exception is the upstream fork attribution `OsamaBinBallZak/ShhcribbleiOS`, which references an externally-owned GitHub repo and must stay as the original spelling.
+
+---
+
 ## Directory map
 
 ```
-ShhcribbleiOS/
+ShhhcribbleiOS/
 ├── App/
-│   ├── ShhcribbleApp.swift           # Entry point, ModelContainer, URL scheme handler
-│   └── AppIntents.swift              # StartRecordingIntent, ShhcribbleShortcuts (App Shortcuts)
+│   ├── ShhhcribbleApp.swift           # Entry point, ModelContainer, URL scheme handler
+│   └── AppIntents.swift              # StartRecordingIntent, ShhhcribbleShortcuts (App Shortcuts)
 ├── Features/
 │   ├── Recording/
 │   │   ├── RecordingView.swift       # Waveform, timer, Stop + Cancel buttons
@@ -56,9 +62,9 @@ ShhcribbleiOS/
 ├── Extensions/
 │   ├── String+Filters.swift          # Filler word removal, substitution pass
 │   └── String+TitleGeneration.swift  # First-sentence extraction for auto-title
-ShhcribbleShared/                     # Live Activity attributes + StopRecordingIntent — keep as-is from original
-ShhcribbleWidget/                     # Live Activity — extend waveform UI
-ShhcribbleKeyboard/                   # Phase 2 only — do not create until Sprint 5
+ShhhcribbleShared/                     # Live Activity attributes + StopRecordingIntent — keep as-is from original
+ShhhcribbleWidget/                     # Live Activity — extend waveform UI
+ShhhcribbleKeyboard/                   # Phase 2 only — do not create until Sprint 5
 ```
 
 ---
@@ -210,11 +216,11 @@ actor ClipboardService {
 
 ## App Group
 
-App Group ID: `group.com.shhcribble`
+App Group ID: `group.com.shhhcribble`
 Set up from the very first build. Shared between:
 - Main app target
-- `ShhcribbleWidget` (Live Activity)
-- `ShhcribbleKeyboard` (Phase 2 — keyboard extension)
+- `ShhhcribbleWidget` (Live Activity)
+- `ShhhcribbleKeyboard` (Phase 2 — keyboard extension)
 
 If the group isn't set up from Sprint 1, adding the keyboard extension in Sprint 5 requires re-entitling every target simultaneously. Do it once, early.
 
@@ -225,8 +231,8 @@ If the group isn't set up from Sprint 1, adding the keyboard extension in Sprint
 ```swift
 // StartRecordingIntent — invokable from Siri, Shortcuts, AirPods, Action Button, Control Center
 struct StartRecordingIntent: AppIntent {
-    static var title: LocalizedStringResource = "Start Shhcribble Recording"
-    static var description = IntentDescription("Start a voice recording in Shhcribble")
+    static var title: LocalizedStringResource = "Start Shhhcribble Recording"
+    static var description = IntentDescription("Start a voice recording in Shhhcribble")
 
     func perform() async throws -> some IntentResult {
         // Open app and begin recording via URL scheme or scene activation
@@ -236,7 +242,7 @@ struct StartRecordingIntent: AppIntent {
 
 // Registered as an App Shortcut so it appears in Siri and Shortcuts automatically
 // without any user setup
-struct ShhcribbleShortcuts: AppShortcutsProvider {
+struct ShhhcribbleShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
             intent: StartRecordingIntent(),
@@ -286,9 +292,9 @@ Flip to `.review` optimistically on stop — don't show a "Transcribing…" spin
 
 ## Phase 2 — keyboard extension (don't build until Sprint 5)
 
-The keyboard extension (`ShhcribbleKeyboard`) injects transcribed text directly into any focused text field via `UITextDocumentProxy`. It cannot access the microphone directly (Apple sandbox). Flow:
+The keyboard extension (`ShhhcribbleKeyboard`) injects transcribed text directly into any focused text field via `UITextDocumentProxy`. It cannot access the microphone directly (Apple sandbox). Flow:
 
-1. User switches to Shhcribble keyboard (Globe key)
+1. User switches to Shhhcribble keyboard (Globe key)
 2. Taps mic button in keyboard UI
 3. Keyboard signals main app via App Group shared container
 4. Main app wakes (background audio session), records + transcribes
@@ -323,7 +329,7 @@ The keyboard extension (`ShhcribbleKeyboard`) injects transcribed text directly 
 
 **Sprint 1 — Foundation**
 1. Re-sign all targets under your Apple Developer team
-2. Set up App Group `group.com.shhcribble` on all targets
+2. Set up App Group `group.com.shhhcribble` on all targets
 3. Audit existing Swift files — refactor into feature folder structure above
 4. Replace any UserDefaults note persistence with SwiftData `Note` model
 5. Add `ControlCenterWidget` target (iOS 18 `ControlWidget`)
@@ -348,7 +354,7 @@ The keyboard extension (`ShhcribbleKeyboard`) injects transcribed text directly 
 18. Visual polish — typography, waveform animation, dark mode
 
 **Sprint 5 — Keyboard extension (Phase 2)**
-19. `ShhcribbleKeyboard` target + `UIInputViewController`
+19. `ShhhcribbleKeyboard` target + `UIInputViewController`
 20. App Group microphone handoff flow
 21. `UITextDocumentProxy` text injection
 22. Cancel button in keyboard UI

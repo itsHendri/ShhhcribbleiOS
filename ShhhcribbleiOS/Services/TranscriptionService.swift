@@ -42,7 +42,7 @@ final class TranscriptionStatus: ObservableObject {
 
     func set(_ status: ModelStatus) { self.model = status }
     func event(_ text: String) {
-        print("[Shhcribble] \(text)")
+        print("[Shhhcribble] \(text)")
         self.lastEvent = text
     }
 }
@@ -224,7 +224,7 @@ actor TranscriptionService {
         // .background. UIBackgroundModes=audio keeps us alive while recording;
         // this covers the post-stop transcription window.
         let taskId = await MainActor.run {
-            UIApplication.shared.beginBackgroundTask(withName: "Shhcribble.transcribe") {
+            UIApplication.shared.beginBackgroundTask(withName: "Shhhcribble.transcribe") {
                 // Expiration — iOS is about to kill us. Force-stop.
                 Task { await TranscriptionService.shared.forceEndBackgroundTask() }
             }
@@ -232,7 +232,7 @@ actor TranscriptionService {
         self.bgTaskId = taskId
         await TranscriptionStatus.shared.event("Triggered")
         await setUIRecording(true)
-        let activityOK = await MainActor.run { ShhcribbleActivityManager.shared.start() }
+        let activityOK = await MainActor.run { ShhhcribbleActivityManager.shared.start() }
         if !activityOK {
             await TranscriptionStatus.shared.event("Live Activity unavailable — continuing without it")
         }
@@ -250,7 +250,7 @@ actor TranscriptionService {
             }
             Task.detached {
                 try? await Task.sleep(nanoseconds: 3_000_000_000)
-                await MainActor.run { ShhcribbleActivityManager.shared.end() }
+                await MainActor.run { ShhhcribbleActivityManager.shared.end() }
             }
         }
 
@@ -389,7 +389,7 @@ actor TranscriptionService {
                     UIPasteboard.general.string = filtered
                 }
                 TranscriptionStatus.shared.partialSnippet = snippet
-                ShhcribbleActivityManager.shared.update(snippet: snippet)
+                ShhhcribbleActivityManager.shared.update(snippet: snippet)
             }
         } catch {
             // Best-effort — the final transcribe on stop will catch up.
@@ -441,7 +441,7 @@ actor TranscriptionService {
         let filterOn = UserDefaults.standard.object(forKey: "filterFillerWords") as? Bool ?? true
         let filtered = filterOn ? FillerWordFilter.filter(partial) : partial
         await MainActor.run {
-            ShhcribbleActivityManager.shared.update(snippet: snippet)
+            ShhhcribbleActivityManager.shared.update(snippet: snippet)
             TranscriptionStatus.shared.partialSnippet = snippet
             if !filtered.isEmpty {
                 UIPasteboard.general.string = filtered

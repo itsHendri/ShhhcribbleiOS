@@ -1,7 +1,7 @@
 import ActivityKit
 import Foundation
 
-public struct ShhcribbleActivityAttributes: ActivityAttributes, Sendable {
+public struct ShhhcribbleActivityAttributes: ActivityAttributes, Sendable {
     public struct ContentState: Codable, Hashable, Sendable {
         public var status: Status
         public var snippet: String

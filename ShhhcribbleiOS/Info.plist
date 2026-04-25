@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Shhcribble</string>
+	<string>Shhhcribble</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -24,17 +24,17 @@
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>com.tiurihartog.shhcribble</string>
+			<string>com.tiurihartog.shhhcribble</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>shhcribble</string>
+				<string>shhhcribble</string>
 			</array>
 		</dict>
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Shhcribble records audio to transcribe your speech. Recording only happens when you trigger it.</string>
+	<string>Shhhcribble records audio to transcribe your speech. Recording only happens when you trigger it.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>UIBackgroundModes</key>

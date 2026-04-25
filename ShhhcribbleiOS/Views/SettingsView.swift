@@ -80,7 +80,7 @@ struct SettingsView: View {
                         Text("Back Tap setup")
                             .font(.headline)
                         Text("""
-                        Settings → Accessibility → Touch → Back Tap → Triple Tap → Shortcuts → tap "Shhcribble: Record & Transcribe".
+                        Settings → Accessibility → Touch → Back Tap → Triple Tap → Shortcuts → tap "Shhhcribble: Record & Transcribe".
 
                         Triple-tap the back of your phone to transcribe.
                         """)

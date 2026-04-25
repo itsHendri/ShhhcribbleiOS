@@ -1,7 +1,7 @@
 import AppIntents
 
 public struct StopRecordingIntent: LiveActivityIntent {
-    public static var title: LocalizedStringResource = "Stop Shhcribble Recording"
+    public static var title: LocalizedStringResource = "Stop Shhhcribble Recording"
     public static var openAppWhenRun: Bool = false
     public static var isDiscoverable: Bool = false
 

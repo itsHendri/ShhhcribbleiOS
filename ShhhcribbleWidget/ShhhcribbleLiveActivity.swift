@@ -1,12 +1,12 @@
 import ActivityKit
 import AppIntents
-import ShhcribbleShared
+import ShhhcribbleShared
 import SwiftUI
 import WidgetKit
 
-struct ShhcribbleLiveActivity: Widget {
+struct ShhhcribbleLiveActivity: Widget {
     var body: some WidgetConfiguration {
-        ActivityConfiguration(for: ShhcribbleActivityAttributes.self) { context in
+        ActivityConfiguration(for: ShhhcribbleActivityAttributes.self) { context in
             HStack(spacing: 12) {
                 ZStack {
                     Circle().fill(.red.opacity(0.15))

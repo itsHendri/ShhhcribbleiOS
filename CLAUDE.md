@@ -1,4 +1,4 @@
-# ShhcribbleiOS — Claude Code context
+# ShhhcribbleiOS — Claude Code context
 
 Read this at the start of every session. It is the single source of truth for architecture decisions and hard constraints. Don't relitigate anything marked **load-bearing** without a strong reason and a note added here.
 
@@ -6,7 +6,7 @@ Read this at the start of every session. It is the single source of truth for ar
 
 ## What this app is
 
-A native iOS voice-to-text note-taking app. An external trigger (Control Center widget, AirPods, Back Tap, Action Button, or keyboard extension) starts recording. The user speaks. Parakeet TDT v3 transcribes on-device via FluidAudio. The user reviews, edits if needed, and saves to a local note store — or pastes directly into another app via the keyboard extension.
+A native iOS voice-to-text note-taking app. An external trigger (Control Center widget, AirPods, Back Tap, Action Button, or keyboard extension) starts recording. The user speaks. Parakeet TDT v3 transcribes on-device via FluidAudio. The transcript is auto-saved as a Note and copied to the clipboard — or, in Phase 2, injected directly into the focused text field via the keyboard extension. Edits happen later from the note detail screen; there is no forced review step in the main flow.
 
 **Everything runs on-device. No cloud. No API keys. No LLM post-processing.**
 
@@ -14,7 +14,7 @@ A native iOS voice-to-text note-taking app. An external trigger (Control Center 
 - **Language:** Swift / SwiftUI
 - **Transcription:** FluidAudio + NVIDIA Parakeet TDT v3 (CoreML, Apple Neural Engine)
 - **Persistence:** SwiftData
-- **Forked from:** OsamaBinBallZak/ShhcribbleiOS (MIT)
+- **Forked from:** OsamaBinBallZak/ShhhcribbleiOS (MIT)
 - **Related:** itsHendri/Shhhcribble (Mac version — same FluidAudio stack, lessons learned documented below)
 
 ---
@@ -22,17 +22,14 @@ A native iOS voice-to-text note-taking app. An external trigger (Control Center 
 ## Directory map
 
 ```
-ShhcribbleiOS/
+ShhhcribbleiOS/
 ├── App/
-│   ├── ShhcribbleApp.swift           # Entry point, ModelContainer, URL scheme handler
-│   └── AppIntents.swift              # StartRecordingIntent, ShhcribbleShortcuts (App Shortcuts)
+│   ├── ShhhcribbleApp.swift           # Entry point, ModelContainer, URL scheme handler
+│   └── AppIntents.swift              # StartRecordingIntent, ShhhcribbleShortcuts (App Shortcuts)
 ├── Features/
 │   ├── Recording/
 │   │   ├── RecordingView.swift       # Waveform, timer, Stop + Cancel buttons
 │   │   └── RecordingViewModel.swift  # @Observable, owns TranscriptionService session
-│   ├── Review/
-│   │   ├── ReviewView.swift          # Transcript, inline edit, title, tags, Save/Share/Discard
-│   │   └── ReviewViewModel.swift
 │   ├── NotesList/
 │   │   ├── NotesListView.swift       # Search bar, tag filter chips, note rows
 │   │   └── NotesListViewModel.swift
@@ -56,9 +53,9 @@ ShhcribbleiOS/
 ├── Extensions/
 │   ├── String+Filters.swift          # Filler word removal, substitution pass
 │   └── String+TitleGeneration.swift  # First-sentence extraction for auto-title
-ShhcribbleShared/                     # Live Activity attributes + StopRecordingIntent — keep as-is from original
-ShhcribbleWidget/                     # Live Activity — extend waveform UI
-ShhcribbleKeyboard/                   # Phase 2 only — do not create until Sprint 5
+ShhhcribbleShared/                     # Live Activity attributes + StopRecordingIntent — keep as-is from original
+ShhhcribbleWidget/                     # Live Activity — extend waveform UI
+ShhhcribbleKeyboard/                   # Phase 2 only — do not create until Sprint 5
 ```
 
 ---
@@ -104,14 +101,16 @@ Recording starts (Live Activity)
     ↓
 [Stop tap]
     ↓
-  → Empty audio → "No speech detected" (neutral, ~1 s, dismiss) → ClipboardService.restoreImmediately()
+  → Empty audio → .noSpeech ("No speech detected", ~1 s neutral, dismiss) → ClipboardService.restoreImmediately()
   → Valid audio → Parakeet → substitution pass → filler filter
     ↓
-ReviewView
-  → [Discard] → ClipboardService.restoreImmediately()
-  → [Save]    → persist Note, write transcript to clipboard, ClipboardService.scheduleRestore(2.0)
-  → [Share]   → iOS share sheet, write transcript to clipboard, ClipboardService.scheduleRestore(2.0)
+Auto-save Note (auto-title from first sentence)
+Write transcript to clipboard
+ClipboardService.scheduleRestore(2.0)
+Live Activity ends, app returns to .idle
 ```
+
+Editing happens later via `NoteDetailView` (inline edit, share, delete). There is no forced review screen in the main flow — Save is automatic on Stop. If the user wants to discard, they delete the note from `NotesListView` or `NoteDetailView`.
 
 **Never save a blank note. Never paste an empty string.**
 
@@ -210,11 +209,11 @@ actor ClipboardService {
 
 ## App Group
 
-App Group ID: `group.com.shhcribble`
+App Group ID: `group.com.shhhcribble`
 Set up from the very first build. Shared between:
 - Main app target
-- `ShhcribbleWidget` (Live Activity)
-- `ShhcribbleKeyboard` (Phase 2 — keyboard extension)
+- `ShhhcribbleWidget` (Live Activity)
+- `ShhhcribbleKeyboard` (Phase 2 — keyboard extension)
 
 If the group isn't set up from Sprint 1, adding the keyboard extension in Sprint 5 requires re-entitling every target simultaneously. Do it once, early.
 
@@ -225,8 +224,8 @@ If the group isn't set up from Sprint 1, adding the keyboard extension in Sprint
 ```swift
 // StartRecordingIntent — invokable from Siri, Shortcuts, AirPods, Action Button, Control Center
 struct StartRecordingIntent: AppIntent {
-    static var title: LocalizedStringResource = "Start Shhcribble Recording"
-    static var description = IntentDescription("Start a voice recording in Shhcribble")
+    static var title: LocalizedStringResource = "Start Shhhcribble Recording"
+    static var description = IntentDescription("Start a voice recording in Shhhcribble")
 
     func perform() async throws -> some IntentResult {
         // Open app and begin recording via URL scheme or scene activation
@@ -236,7 +235,7 @@ struct StartRecordingIntent: AppIntent {
 
 // Registered as an App Shortcut so it appears in Siri and Shortcuts automatically
 // without any user setup
-struct ShhcribbleShortcuts: AppShortcutsProvider {
+struct ShhhcribbleShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
             intent: StartRecordingIntent(),
@@ -273,22 +272,20 @@ struct ShhcribbleShortcuts: AppShortcutsProvider {
 .transcribing
   → empty result → .noSpeech      (auto-dismiss ~1 s, ClipboardService.restoreImmediately)
   → error        → .error         (auto-dismiss ~1.6 s, ClipboardService.restoreImmediately)
-  → valid text   → .review
-.review
-  → save         → .idle          (persist Note, clipboard write, schedule restore)
-  → share        → .idle          (share sheet, clipboard write, schedule restore)
-  → discard      → .idle          (ClipboardService.restoreImmediately)
+  → valid text   → .saved         (persist Note, clipboard write, scheduleRestore(2.0))
+.saved
+  → ~1 s confirmation → .idle
 ```
 
-Flip to `.review` optimistically on stop — don't show a "Transcribing…" spinner in the main flow. If transcription takes longer than expected, the review screen loads while it completes.
+There is no `.review` state in the main flow. Save is automatic on Stop. Edits happen later via `NoteDetailView`. Show a brief `.saved` confirmation (toast / haptic) so the user knows the note landed, then return to `.idle`.
 
 ---
 
 ## Phase 2 — keyboard extension (don't build until Sprint 5)
 
-The keyboard extension (`ShhcribbleKeyboard`) injects transcribed text directly into any focused text field via `UITextDocumentProxy`. It cannot access the microphone directly (Apple sandbox). Flow:
+The keyboard extension (`ShhhcribbleKeyboard`) injects transcribed text directly into any focused text field via `UITextDocumentProxy`. It cannot access the microphone directly (Apple sandbox). Flow:
 
-1. User switches to Shhcribble keyboard (Globe key)
+1. User switches to Shhhcribble keyboard (Globe key)
 2. Taps mic button in keyboard UI
 3. Keyboard signals main app via App Group shared container
 4. Main app wakes (background audio session), records + transcribes
@@ -323,7 +320,7 @@ The keyboard extension (`ShhcribbleKeyboard`) injects transcribed text directly 
 
 **Sprint 1 — Foundation**
 1. Re-sign all targets under your Apple Developer team
-2. Set up App Group `group.com.shhcribble` on all targets
+2. Set up App Group `group.com.shhhcribble` on all targets
 3. Audit existing Swift files — refactor into feature folder structure above
 4. Replace any UserDefaults note persistence with SwiftData `Note` model
 5. Add `ControlCenterWidget` target (iOS 18 `ControlWidget`)
@@ -331,9 +328,9 @@ The keyboard extension (`ShhcribbleKeyboard`) injects transcribed text directly 
 **Sprint 2 — Capture flow**
 6. `RecordingView` + `RecordingViewModel` — waveform, timer, Stop + Cancel
 7. `ClipboardService` — snapshot/write/restore
-8. `ReviewView` + `ReviewViewModel` — transcript, inline edit, title, tags
+8. Auto-save on Stop + `.saved` confirmation toast (no Review screen — edits land in `NoteDetailView`)
 9. `TranscriptionService` — FluidAudio actor, VP-free audio session
-10. Share Sheet from ReviewView
+10. Share Sheet from `NoteDetailView`
 
 **Sprint 3 — Notes layer**
 11. SwiftData `Note` model + `ModelContainer` setup
@@ -348,7 +345,7 @@ The keyboard extension (`ShhcribbleKeyboard`) injects transcribed text directly 
 18. Visual polish — typography, waveform animation, dark mode
 
 **Sprint 5 — Keyboard extension (Phase 2)**
-19. `ShhcribbleKeyboard` target + `UIInputViewController`
+19. `ShhhcribbleKeyboard` target + `UIInputViewController`
 20. App Group microphone handoff flow
 21. `UITextDocumentProxy` text injection
 22. Cancel button in keyboard UI
@@ -362,6 +359,125 @@ The keyboard extension (`ShhcribbleKeyboard`) injects transcribed text directly 
 2. Verify with AirPods connected + music playing before committing
 3. Update this CLAUDE.md if the change adds a new load-bearing decision or pref key
 4. Merge to main, delete the branch
+
+---
+
+## Working notes — Sprint 1 + iteration learnings
+
+These are gotchas and conventions discovered while building Sprint 1 + the recording UX. Read before extending.
+
+### Build & install on a physical iPhone (CLI)
+
+Xcode UI is fine, but Cmd-R from Xcode silently fails when the App Group entitlement is in play under a free Personal Team. Direct `devicectl` install is the reliable path during development:
+
+```bash
+xcodebuild -project ShhhcribbleiOS.xcodeproj -scheme ShhhcribbleiOS \
+  -destination 'generic/platform=iOS' -configuration Debug \
+  -allowProvisioningUpdates -derivedDataPath /tmp/sb_build build
+
+xcrun devicectl device install app \
+  --device <iPhone UDID> \
+  /tmp/sb_build/Build/Products/Debug-iphoneos/ShhhcribbleiOS.app
+```
+
+Get the device UDID with `xcrun devicectl list devices`. The `Failed to load provisioning paramter list...code=1002 "No provider was found"` warning that `devicectl` always emits is harmless — installation completes anyway.
+
+### Personal Team signing — pin the team ID in `project.yml`
+
+`xcodegen` regenerates the project on every run and **blanks out** the development team selection from the pbxproj. To stop the manual "set team in Xcode every time" loop, the Personal Team ID is pinned in [project.yml](project.yml) under each target's `settings.base`:
+
+```yaml
+DEVELOPMENT_TEAM: L9T3PX7HVH
+```
+
+That's the user's personal team. Do not commit a paid program team ID here — Personal Team is intentional for development.
+
+### App Group + Personal Team don't mix
+
+Personal Team accounts cannot include the `com.apple.security.application-groups` entitlement in their auto-generated provisioning profiles. With it set, Xcode "Build Succeeded" but install silently fails (no error in the navigator). The App Group entries in [ShhhcribbleiOS.entitlements](ShhhcribbleiOS/ShhhcribbleiOS.entitlements) and [ShhhcribbleWidget.entitlements](ShhhcribbleWidget/ShhhcribbleWidget.entitlements) are intentionally **stripped** for now, with a marker comment in `project.yml` so we restore them when the app moves to a paid Apple Developer Program account.
+
+**Restore App Group when:**
+1. User enrols in paid Apple Developer Program
+2. Sprint 5 begins (keyboard extension needs the App Group container to coordinate with main app)
+
+### LiveActivityIntent + Personal Team
+
+`LiveActivityIntent.perform()` is meant to run in the main app's process when the user taps a button on a Live Activity. With a free Personal Team and **no App Group entitlement**, the cross-process routing from widget extension → main app silently fails (intent never fires). Workaround currently in place:
+
+```swift
+public static var openAppWhenRun: Bool = true
+```
+
+Both `StopRecordingIntent` and `CancelRecordingIntent` use `openAppWhenRun: true` so tapping them from the lock screen forces unlock + foreground. Comment markers in both files note when to flip back to `false` (after paid program + App Group restored).
+
+The Cancel/Stop buttons on the lock-screen Live Activity card are now **decorative only**. The whole card is tappable via `.widgetURL(URL(string: "shhhcribble://open")!)` which deep-links into the app — user stops via the in-app overlay. This avoids relying on intent routing entirely. Restore the per-button intents in Sprint 5 when the App Group comes back.
+
+### Diagnostic logging on physical devices
+
+`print(...)` does **not** show up in `idevicesyslog` output — iOS forwards `print` to stdout, which only Xcode's debug console captures. For diagnostic logs that need to survive launch from `devicectl` and be readable from `idevicesyslog`, use `os.Logger`:
+
+```swift
+import os
+private let diagLog = Logger(subsystem: "com.shhhcribble.diag", category: "lifecycle")
+diagLog.notice("StopRecordingIntent.perform invoked, performer=\(Self.performer == nil ? "nil" : "set", privacy: .public)")
+```
+
+Mark interpolated values `privacy: .public` so they appear in the log instead of being redacted to `<private>`.
+
+To stream from a connected iPhone:
+
+```bash
+brew install libimobiledevice    # one-time
+idevicesyslog -u <iPhone UDID> --no-colors -o /tmp/sb_syslog.log
+# (or) grep 'shhhcribble.diag' /tmp/sb_syslog.log
+```
+
+`--no-colors` matters: ANSI escape codes corrupt the file otherwise. Only run **one** `idevicesyslog` instance writing to the file at a time — multiple instances writing to the same file produce binary garbage.
+
+### Live Activity widget animations
+
+`.symbolEffect(.variableColor.iterative.reversing, …)` is unreliable in widget context on iOS 26. The fallback used in [ShhhcribbleLiveActivity.swift](ShhhcribbleWidget/ShhhcribbleLiveActivity.swift) is a **`TimelineView(.animation)`-driven custom waveform** built from primitive `Capsule` shapes. SwiftUI redraws on every timeline tick (~80 ms) and we drive bar heights from a sin wave evaluated at the timestamp. This is the documented way to get continuous animation in a widget without state churn.
+
+Don't push high-frequency state updates to a Live Activity to drive animations. ActivityKit throttles aggressively (~2 updates/sec sustained) and the system will silently drop later updates.
+
+### Live transcript pipeline pitfall
+
+The Mac version computed a 60-character tail for the floating pill (`String(text.suffix(60))`). This was copied into iOS without realising the iOS overlay is full-screen and wants the **full** transcript. The sliding 60-char window broke the in-app `TypingViewModel` because `newText.hasPrefix(displayed)` failed on every partial — the typer rewound and retyped continuously. Symptom: jittery, never-settling text.
+
+Fix in [TranscriptionService.swift](ShhhcribbleiOS/Services/TranscriptionService.swift):
+- `TranscriptionStatus.partialSnippet` now receives the **full** filtered transcript.
+- Live Activity gets a bounded `String(text.suffix(200))` because widget render space is tight.
+
+The `TypingViewModel`'s rewind logic is still correct for genuine ASR revisions; it just shouldn't be triggered by our own truncation.
+
+### Audio reactivity
+
+[AudioRecorder.swift](ShhhcribbleiOS/Services/AudioRecorder.swift) computes RMS per buffer (~20 Hz on iPhone), scales by 12× to map normal speech to ~1.0, and runs an envelope follower (`max(scaled, smoothed * 0.78)`) for instant attack + smooth release. Published to `TranscriptionStatus.audioLevel` (0…1) which the in-app `SoundwaveBars` reads.
+
+`SoundwaveBars` keeps an 11-slot history and shifts left on a 60 ms tick — so the bars literally show the shape of your voice over the last ~660 ms, not a stylised pulse.
+
+The Live Activity waveform stays self-driven (sin wave via TimelineView) — pushing audio level updates through ActivityKit isn't viable.
+
+### Streaming vs Parakeet TDT v3
+
+Two different FluidAudio engines, **not** simultaneously loaded. The `AsrMode` AppStorage choice swaps which one `TranscriptionService` instantiates:
+
+- **Streaming** (`StreamingEouAsrManager`): live partials at low latency, no punctuation/capitalisation.
+- **Parakeet TDT v3** (`AsrManager`): live partials AND a final clean transcribe on stop, punctuated + capitalised. Higher CPU.
+
+Both run fully on-device on the ANE. The picker in Settings is the only user-facing knob.
+
+### Scene-phase observer — only auto-stop on URL-scheme launches
+
+`ShhhcribbleApp.scenePhase` observer used to call `stopRecording()` whenever the app went background. This broke the in-app flow: starting via the play button then switching apps would terminate the recording the moment the Live Activity appeared. Auto-stop is now gated:
+
+```swift
+if phase == .background && status.isRecording && status.launchedViaURL {
+    Task { await TranscriptionService.shared.stopRecording() }
+}
+```
+
+So URL-scheme triggers (Back Tap → Shortcut → app launch) still get the "tap iOS Back pill = commit" behaviour, but in-app starts continue across app switches.
 
 ---
 

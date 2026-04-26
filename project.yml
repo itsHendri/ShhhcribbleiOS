@@ -1,9 +1,27 @@
-name: ShhcribbleiOS
+name: ShhhcribbleiOS
 options:
-  bundleIdPrefix: com.tiurihartog
+  bundleIdPrefix: com.hendrivanniekerk
   deploymentTarget:
     iOS: "18.0"
   createIntermediateGroups: true
+
+schemes:
+  ShhhcribbleiOS:
+    build:
+      targets:
+        ShhhcribbleShared: all
+        ShhhcribbleWidget: all
+        ShhhcribbleiOS: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
 
 packages:
   FluidAudio:
@@ -11,44 +29,45 @@ packages:
     branch: main
 
 targets:
-  ShhcribbleShared:
+  ShhhcribbleShared:
     type: framework
     platform: iOS
     sources:
-      - path: ShhcribbleShared
+      - path: ShhhcribbleShared
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.tiurihartog.shhcribble.shared
+        PRODUCT_BUNDLE_IDENTIFIER: com.hendrivanniekerk.shhhcribble.shared
         SWIFT_VERSION: "5.9"
         IPHONEOS_DEPLOYMENT_TARGET: "18.0"
         CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: L9T3PX7HVH
         GENERATE_INFOPLIST_FILE: YES
         SKIP_INSTALL: YES
         DEFINES_MODULE: YES
         BUILD_LIBRARY_FOR_DISTRIBUTION: NO
 
-  ShhcribbleiOS:
+  ShhhcribbleiOS:
     type: application
     platform: iOS
     sources:
-      - path: ShhcribbleiOS
+      - path: ShhhcribbleiOS
         excludes:
           - Info.plist
-          - ShhcribbleiOS.entitlements
+          - ShhhcribbleiOS.entitlements
     resources:
-      - ShhcribbleiOS/Resources/Assets.xcassets
+      - ShhhcribbleiOS/Resources/Assets.xcassets
     info:
-      path: ShhcribbleiOS/Info.plist
+      path: ShhhcribbleiOS/Info.plist
       properties:
-        CFBundleDisplayName: Shhcribble
+        CFBundleDisplayName: Shhhcribble
         CFBundleShortVersionString: "1.0.0"
         CFBundleVersion: "1"
         CFBundleURLTypes:
-          - CFBundleURLName: com.tiurihartog.shhcribble
+          - CFBundleURLName: com.hendrivanniekerk.shhhcribble
             CFBundleURLSchemes:
-              - shhcribble
+              - shhhcribble
         LSRequiresIPhoneOS: true
-        NSMicrophoneUsageDescription: "Shhcribble records audio to transcribe your speech. Recording only happens when you trigger it."
+        NSMicrophoneUsageDescription: "Shhhcribble records audio to transcribe your speech. Recording only happens when you trigger it."
         NSSupportsLiveActivities: true
         UIBackgroundModes:
           - audio
@@ -59,48 +78,62 @@ targets:
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
     entitlements:
-      path: ShhcribbleiOS/ShhcribbleiOS.entitlements
+      path: ShhhcribbleiOS/ShhhcribbleiOS.entitlements
       properties: {}
+      # NOTE: App Group `group.com.shhhcribble` was temporarily removed so
+      # the project can sign with a free Personal Team for device testing.
+      # Restore before adding the keyboard extension in Sprint 5 — the
+      # keyboard extension and main app share state via this group.
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.tiurihartog.shhcribble
+        PRODUCT_BUNDLE_IDENTIFIER: com.hendrivanniekerk.shhhcribble
         TARGETED_DEVICE_FAMILY: "1"
         SWIFT_VERSION: "5.9"
         IPHONEOS_DEPLOYMENT_TARGET: "18.0"
         CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: L9T3PX7HVH
         ENABLE_USER_SCRIPT_SANDBOXING: YES
         GENERATE_INFOPLIST_FILE: NO
     dependencies:
-      - target: ShhcribbleShared
+      - target: ShhhcribbleShared
         embed: true
       - package: FluidAudio
         product: FluidAudio
-      - target: ShhcribbleWidget
+      - target: ShhhcribbleWidget
         embed: true
 
-  ShhcribbleWidget:
+  ShhhcribbleWidget:
     type: app-extension
     platform: iOS
     sources:
-      - path: ShhcribbleWidget
+      - path: ShhhcribbleWidget
+        excludes:
+          - ShhhcribbleWidget.entitlements
+          - Assets.xcassets
+    resources:
+      - ShhhcribbleWidget/Assets.xcassets
     info:
-      path: ShhcribbleWidget/Info.plist
+      path: ShhhcribbleWidget/Info.plist
       properties:
-        CFBundleDisplayName: Shhcribble Widget
+        CFBundleDisplayName: Shhhcribble Widget
         CFBundleShortVersionString: "1.0.0"
         CFBundleVersion: "1"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: ShhhcribbleWidget/ShhhcribbleWidget.entitlements
+      properties: {}
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.tiurihartog.shhcribble.widget
+        PRODUCT_BUNDLE_IDENTIFIER: com.hendrivanniekerk.shhhcribble.widget
         TARGETED_DEVICE_FAMILY: "1"
         SWIFT_VERSION: "5.9"
         IPHONEOS_DEPLOYMENT_TARGET: "18.0"
         CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: L9T3PX7HVH
         ENABLE_USER_SCRIPT_SANDBOXING: YES
         GENERATE_INFOPLIST_FILE: NO
         SKIP_INSTALL: YES
     dependencies:
-      - target: ShhcribbleShared
+      - target: ShhhcribbleShared
         embed: false

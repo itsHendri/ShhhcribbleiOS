@@ -1,0 +1,324 @@
+import SwiftUI
+
+struct RecordingOverlayView: View {
+    @ObservedObject var status: TranscriptionStatus
+    @State private var elapsed: TimeInterval = 0
+    @State private var timer: Timer?
+
+    var body: some View {
+        if status.isRecording {
+            ZStack {
+                LinearGradient(
+                    colors: [Color.black, Color(red: 0.10, green: 0.10, blue: 0.12)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+
+                VStack(spacing: 20) {
+                    Text(timeString)
+                        .font(.system(size: 17, weight: .semibold, design: .monospaced))
+                        .foregroundStyle(.white.opacity(0.55))
+                        .padding(.top, 24)
+
+                    SoundwaveBars(audioLevel: status.audioLevel)
+                        .frame(width: 200, height: 72)
+
+                    ScrollingLiveText(text: status.partialSnippet)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .padding(.horizontal, 28)
+
+                    HStack(spacing: 16) {
+                        Button(action: cancel) {
+                            Text("Cancel")
+                                .font(.system(size: 17, weight: .semibold, design: .rounded))
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 56)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 28, style: .continuous)
+                                        .fill(Color.white.opacity(0.12))
+                                )
+                        }
+
+                        Button(action: stop) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "doc.on.doc.fill")
+                                Text("Copy & Save")
+                            }
+                            .font(.system(size: 17, weight: .semibold, design: .rounded))
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 56)
+                            .background(
+                                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                                    .fill(Color(red: 0.25, green: 0.55, blue: 1.0))
+                            )
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 8)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            .preferredColorScheme(.dark)
+            .transition(.scale(scale: 0.92).combined(with: .opacity))
+            .onAppear { startTimer() }
+            .onDisappear { stopTimer() }
+        }
+    }
+
+    private var timeString: String {
+        let total = Int(elapsed)
+        return String(format: "%01d:%02d", total / 60, total % 60)
+    }
+
+    private func startTimer() {
+        elapsed = 0
+        timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+            elapsed += 0.1
+        }
+    }
+
+    private func stopTimer() {
+        timer?.invalidate()
+        timer = nil
+    }
+
+    private func stop() {
+        Task { await TranscriptionService.shared.stopRecording() }
+    }
+
+    private func cancel() {
+        // For now, Cancel does the same thing as Stop. Sprint 2 will introduce
+        // a real abort path that drops the audio and skips the SwiftData write.
+        Task { await TranscriptionService.shared.stopRecording() }
+    }
+}
+
+// MARK: - Soundwave bars
+//
+// Scrolling history visualizer. Each tick we shift the level history left
+// and append the current `audioLevel`, so the bars actually look like a
+// waveform travelling across the strip (right edge = now, left edge = ~0.6 s
+// ago). Much more "alive" than a static sin-wave pattern; the user sees the
+// shape of their voice over time.
+struct SoundwaveBars: View {
+    let audioLevel: Double
+
+    private let barCount = 11
+
+    @State private var history: [Double] = Array(repeating: 0, count: 11)
+
+    private let tick = Timer.publish(every: 0.06, on: .main, in: .common).autoconnect()
+
+    var body: some View {
+        GeometryReader { geo in
+            HStack(alignment: .center, spacing: 5) {
+                ForEach(0..<barCount, id: \.self) { i in
+                    let level = history[i]
+                    // Shape the response: square-root makes quiet sounds
+                    // more visible without the loud peaks pinning at max.
+                    let shaped = level.squareRoot()
+                    // Bars span 4 pt (silent) → ~95% of frame height (loud).
+                    let h = max(4, shaped * Double(geo.size.height) * 0.95)
+                    Capsule()
+                        .fill(Color.white.opacity(0.85))
+                        .frame(width: 5, height: h)
+                        .animation(.easeOut(duration: 0.08), value: history[i])
+                }
+            }
+            .frame(width: geo.size.width, height: geo.size.height)
+        }
+        .onReceive(tick) { _ in
+            // Shift history left, append latest level on the right.
+            history.removeFirst()
+            history.append(audioLevel)
+        }
+    }
+}
+
+// MARK: - Scrolling live text
+//
+// Multi-line block that types characters one-at-a-time (~70 ms/char) and
+// flows top-to-bottom across the available space. The text always appears
+// near the bottom of the container (typing-from-bottom feel); when content
+// exceeds the visible height, the ScrollView auto-scrolls so the latest
+// character stays pinned to the bottom and older lines fade up through the
+// top gradient mask.
+struct ScrollingLiveText: View {
+    let text: String
+
+    @StateObject private var typer = TypingViewModel()
+
+    var body: some View {
+        GeometryReader { geo in
+            ScrollViewReader { proxy in
+                ScrollView(.vertical, showsIndicators: false) {
+                    Text(styledTranscript(typer.displayedText))
+                        .font(.system(size: 24, weight: .medium))
+                        .multilineTextAlignment(.leading)
+                        .lineSpacing(4)
+                        .frame(maxWidth: .infinity, alignment: .topLeading)
+                        .padding(.vertical, 4)
+                        .id("end")
+                }
+                .disabled(true)
+                .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
+                .onChange(of: typer.displayedText) { _, _ in
+                    // Light scroll animation: a short ease-out so multi-line
+                    // wraps slide instead of jumping. Short enough that
+                    // overlapping per-character animations still converge to
+                    // the same end position smoothly.
+                    withAnimation(.easeOut(duration: 0.18)) {
+                        proxy.scrollTo("end", anchor: .bottom)
+                    }
+                }
+            }
+        }
+        .mask(
+            // Top fade only kicks in once the transcript has grown past
+            // roughly two wrapped lines, so the very first words don't
+            // render half-faded. The mask interpolates from "fully opaque"
+            // (no effect) to the soft gradient as the displayed text length
+            // approaches the threshold, with an animated transition.
+            LinearGradient(
+                stops: [
+                    .init(color: .black.opacity(1.0 - maskOpacity),                location: 0.00),
+                    .init(color: .black.opacity(1.0 - 0.85 * maskOpacity),         location: 0.08),
+                    .init(color: .black.opacity(1.0 - 0.45 * maskOpacity),         location: 0.16),
+                    .init(color: .black.opacity(1.0 - 0.15 * maskOpacity),         location: 0.24),
+                    .init(color: .black,                                            location: 0.32),
+                    .init(color: .black,                                            location: 1.00),
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .animation(.easeOut(duration: 0.45), value: maskOpacity)
+        )
+        .onChange(of: text) { _, newValue in
+            typer.updateTarget(newValue)
+        }
+        .onAppear {
+            // Hard reset so leftover text from a prior recording can't ghost in.
+            typer.reset()
+            if !text.isEmpty { typer.updateTarget(text) }
+        }
+        .onDisappear { typer.reset() }
+    }
+
+    /// Mask opacity ramps from 0 (no top fade — first words appear fully
+    /// bright) up to 1 (full gradient mask) as the transcript grows. Uses
+    /// character count as a proxy for wrapped-line count: ~30 chars per
+    /// line on iPhone at 24 pt, so the fade starts around line 3 and is
+    /// fully applied by line ~5.
+    private var maskOpacity: Double {
+        let chars = typer.displayedText.count
+        let onset: Double = 80
+        let full: Double = 160
+        if Double(chars) <= onset { return 0 }
+        if Double(chars) >= full { return 1 }
+        return (Double(chars) - onset) / (full - onset)
+    }
+
+    /// Build an AttributedString that fades older words to a dimmer
+    /// foreground while the latest two words stay bright — gives the
+    /// "color follows the typing" feel without per-character animation.
+    private func styledTranscript(_ raw: String) -> AttributedString {
+        guard !raw.isEmpty else { return AttributedString(" ") }
+
+        var attr = AttributedString(raw)
+        // Default colour for everything (older content).
+        attr.foregroundColor = Color.white.opacity(0.32)
+
+        // Find word ranges by walking backwards from the end. We treat
+        // any whitespace as a word boundary; `raw` may end mid-word so
+        // we always include the trailing partial word as the freshest tier.
+        let nsRaw = raw as NSString
+        let length = nsRaw.length
+        var rangesFromEnd: [NSRange] = []
+
+        var idx = length
+        while idx > 0 {
+            // Walk back over whitespace.
+            while idx > 0,
+                  let scalar = Unicode.Scalar(nsRaw.character(at: idx - 1)),
+                  CharacterSet.whitespacesAndNewlines.contains(scalar) {
+                idx -= 1
+            }
+            let wordEnd = idx
+            // Walk back over non-whitespace = the word body.
+            while idx > 0,
+                  let scalar = Unicode.Scalar(nsRaw.character(at: idx - 1)),
+                  !CharacterSet.whitespacesAndNewlines.contains(scalar) {
+                idx -= 1
+            }
+            let wordStart = idx
+            if wordEnd > wordStart {
+                rangesFromEnd.append(NSRange(location: wordStart, length: wordEnd - wordStart))
+            }
+            if rangesFromEnd.count >= 5 { break }
+        }
+
+        // Tiered opacity from the trailing edge backward.
+        let tiers: [Double] = [0.95, 0.95, 0.72, 0.55, 0.42]
+        for (i, nsRange) in rangesFromEnd.enumerated() {
+            guard let range = Range(nsRange, in: raw),
+                  let attrRange = Range(range, in: attr) else { continue }
+            attr[attrRange].foregroundColor = Color.white.opacity(tiers[i])
+        }
+        return attr
+    }
+}
+
+@MainActor
+final class TypingViewModel: ObservableObject {
+    @Published var displayedText: String = ""
+    private var targetText: String = ""
+    private var typingTask: Task<Void, Never>?
+
+    func updateTarget(_ newText: String) {
+        if newText.hasPrefix(displayedText) {
+            targetText = newText
+        } else {
+            // Engine revised earlier words — rewind to common prefix and resume.
+            var commonLen = 0
+            let dChars = Array(displayedText)
+            let nChars = Array(newText)
+            for i in 0..<min(dChars.count, nChars.count) {
+                if dChars[i] == nChars[i] { commonLen = i + 1 } else { break }
+            }
+            displayedText = String(displayedText.prefix(commonLen))
+            targetText = newText
+        }
+
+        typingTask?.cancel()
+        typingTask = Task { [weak self] in
+            while !Task.isCancelled {
+                guard let self else { return }
+                let current = self.displayedText
+                let target = self.targetText
+                let gap = target.count - current.count
+                guard gap > 0 else { break }
+                let nextIdx = target.index(target.startIndex, offsetBy: current.count)
+                self.displayedText = String(target[target.startIndex...nextIdx])
+
+                // Adaptive cadence — speed up when far behind so we don't
+                // trail real speech. Slow to a natural reading rhythm when
+                // the typer is close to caught up.
+                let intervalMs: Int = gap > 80 ? 12
+                                     : gap > 30 ? 28
+                                     : gap > 10 ? 50
+                                                : 70
+                try? await Task.sleep(for: .milliseconds(intervalMs))
+            }
+        }
+    }
+
+    func reset() {
+        typingTask?.cancel()
+        typingTask = nil
+        displayedText = ""
+        targetText = ""
+    }
+}

@@ -341,7 +341,7 @@ The keyboard extension (`ShhhcribbleKeyboard`) injects transcribed text directly
 14. ✅ `SettingsView` — vocabulary section with NavigationLinks to `CustomWordsView`, `SubstitutionsView`, `FillerWordsView`. Filler-words toggle lives inside its own screen now. Live counts shown in the row labels.
 15. `OnboardingView` — 3 screens + deep link to Control Center settings (deferred to pre-TestFlight)
 16. ✅ Audio interruption handling (phone call) — wired via `AudioInterruptionObserver`. AirPods disconnect handled via `AVAudioEngineConfigurationChange` observer in `AudioRecorder` (rebuilds engine, preserves captured samples). Verified on device 2026-04-27.
-17. ✅ Error states — `RecordingPhase` enum on `TranscriptionStatus` (`.idle`, `.recording`, `.noSpeech`, `.error(RecordingError)`). Mic permission denied → "Open Settings" card. Model load failed → Retry card. Empty transcript → distinct `.noSpeech` indicator (~1 s auto-dismiss, no error haptic). All render inside the existing dark recording overlay; the overlay's visibility guard is now `status.overlayVisible`. `isRecording` is a computed property derived from `phase == .recording` so existing call sites still work.
+17. ✅ Error states — `RecordingPhase` enum on `TranscriptionStatus` (`.idle`, `.recording`, `.error(RecordingError)`). Mic permission denied → "Open Settings" card. Model load failed → Retry card. Empty transcript → "No speech detected" toast (no haptic, no error UI; overlay collapses to `.idle`). The two error variants render inside the existing dark recording overlay; the overlay's visibility guard is now `status.overlayVisible`. `isRecording` is a computed property derived from `phase == .recording`.
 18. Visual polish — typography, waveform animation, dark mode (deferred)
 
 **Sprint 5 — Keyboard extension (Phase 2)**
@@ -542,10 +542,11 @@ All three pipeline sites in `TranscriptionService` (final stop at ~line 472, TDT
 
 - `.idle` — overlay hidden.
 - `.recording` — main capture UI (waveform + live transcript + Cancel/Copy & Save).
-- `.noSpeech` — neutral "No speech detected" card, auto-dismisses after 1 s via a Task spun off inside `setPhase`. No haptic, no clipboard write, no Note saved.
 - `.error(RecordingError)` — sticky until user taps Dismiss / Open Settings / Retry. Cases: `.micPermissionDenied` (preflight in `recordAndTranscribe` before recording flag flips), `.modelLoadFailed(String)`, `.other(String)`.
 
-`isRecording: Bool` is a computed property over `phase == .recording`. The `defer` block in `recordAndTranscribe` only collapses to `.idle` when phase is still `.recording` — sticky error/noSpeech states survive teardown so the overlay stays visible. Mic permission preflight uses `AVAudioApplication.requestRecordPermission()` (iOS 17+ async API).
+Empty transcript ("no speech detected") is **not** a phase. It's surfaced via `ToastManager.shared.show("No speech detected", systemImage: "waveform.slash")` while the overlay collapses to `.idle` through the normal defer path. No haptic, no clipboard write, no Note saved. Toast was chosen over a full-screen card because the recording overlay was disproportionate weight for a 1-second non-error signal — the existing toast pattern (used for "Copied to clipboard") is the right surface.
+
+`isRecording: Bool` is a computed property over `phase == .recording`. The `defer` block in `recordAndTranscribe` only collapses to `.idle` when phase is still `.recording` — sticky error states survive teardown so the overlay stays visible. Mic permission preflight uses `AVAudioApplication.requestRecordPermission()` (iOS 17+ async API).
 
 ---
 

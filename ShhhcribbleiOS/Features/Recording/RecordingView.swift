@@ -31,8 +31,6 @@ struct RecordingOverlayView: View {
             recordingContent
                 .onAppear { startTimer() }
                 .onDisappear { stopTimer() }
-        case .noSpeech:
-            NoSpeechCard()
         case .error(let err):
             ErrorCard(error: err)
         case .idle:
@@ -110,25 +108,6 @@ struct RecordingOverlayView: View {
 
     private func cancel() {
         Task { await TranscriptionService.shared.cancelRecording() }
-    }
-}
-
-// MARK: - No-speech indicator
-//
-// Distinct from .error per CLAUDE.md "No speech detected — named state".
-// Auto-dismisses after ~1s via TranscriptionStatus.setPhase logic; the view
-// is purely presentational.
-private struct NoSpeechCard: View {
-    var body: some View {
-        VStack(spacing: 14) {
-            Image(systemName: "waveform")
-                .font(.system(size: 36, weight: .light))
-                .foregroundStyle(.white.opacity(0.55))
-            Text("No speech detected")
-                .font(.system(size: 18, weight: .medium, design: .rounded))
-                .foregroundStyle(.white.opacity(0.8))
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 

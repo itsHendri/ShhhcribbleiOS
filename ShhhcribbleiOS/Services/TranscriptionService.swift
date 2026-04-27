@@ -18,7 +18,6 @@ enum ModelStatus: Equatable {
 enum RecordingPhase: Equatable {
     case idle
     case recording
-    case noSpeech
     case error(RecordingError)
 }
 
@@ -76,8 +75,6 @@ final class TranscriptionStatus: ObservableObject {
     /// other than fully idle. Used by the overlay's visibility guard.
     var overlayVisible: Bool { phase != .idle }
 
-    private var dismissTask: Task<Void, Never>?
-
     private init() {}
 
     func set(_ status: ModelStatus) { self.model = status }
@@ -87,19 +84,7 @@ final class TranscriptionStatus: ObservableObject {
     }
 
     func setPhase(_ newPhase: RecordingPhase) {
-        dismissTask?.cancel()
         phase = newPhase
-        // No-speech auto-dismiss after ~1s. Errors stay visible until the
-        // user taps Dismiss / Open Settings / Retry.
-        if case .noSpeech = newPhase {
-            dismissTask = Task { [weak self] in
-                try? await Task.sleep(for: .seconds(1))
-                guard !Task.isCancelled else { return }
-                await MainActor.run {
-                    if self?.phase == .noSpeech { self?.phase = .idle }
-                }
-            }
-        }
     }
 }
 
@@ -502,8 +487,10 @@ actor TranscriptionService {
             await MainActor.run {
                 TranscriptionStatus.shared.partialSnippet = ""
                 TranscriptionStatus.shared.launchedViaURL = false
-                TranscriptionStatus.shared.setPhase(.noSpeech)
+                ToastManager.shared.show("No speech detected", systemImage: "waveform.slash")
             }
+            // Phase collapses to .idle via the defer block; the toast carries
+            // the user feedback. No haptic, no clipboard write, no Note saved.
             return
         }
 

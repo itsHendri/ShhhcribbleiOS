@@ -38,6 +38,35 @@ enum RecordingError: Equatable {
     }
 }
 
+// Map raw `Error` instances to short, user-readable copy. The default
+// `String(describing: error)` dumps the entire NSError userInfo blob,
+// which is unreadable in the Settings status row and the recording
+// overlay error card. Most failures here are network errors from the
+// HuggingFace download of the TDT model on first use.
+func humaniseModelLoadError(_ error: Error) -> String {
+    let nsError = error as NSError
+    if nsError.domain == NSURLErrorDomain {
+        switch nsError.code {
+        case NSURLErrorNotConnectedToInternet,
+             NSURLErrorNetworkConnectionLost,
+             NSURLErrorDataNotAllowed:
+            return "No internet connection. Parakeet TDT v3 needs a one-time download (~494 MB) on first use."
+        case NSURLErrorTimedOut,
+             NSURLErrorCannotFindHost,
+             NSURLErrorCannotConnectToHost,
+             NSURLErrorDNSLookupFailed,
+             NSURLErrorResourceUnavailable:
+            return "Couldn't reach the model download server. Try again in a moment."
+        default:
+            return "Network error: \(error.localizedDescription)"
+        }
+    }
+    if nsError.domain == NSPOSIXErrorDomain, nsError.code == Int(ENOSPC) {
+        return "Not enough free space to download the model (~494 MB needed)."
+    }
+    return error.localizedDescription
+}
+
 enum AsrMode: String, CaseIterable, Sendable {
     case streaming
     case tdt
@@ -65,6 +94,12 @@ final class TranscriptionStatus: ObservableObject {
     @Published var launchedViaURL: Bool = false
     /// Smoothed mic input level, 0...1, for visualizers.
     @Published var audioLevel: Double = 0
+    /// Fraction (0...1) of the current first-time model download.
+    /// Non-nil only while FluidAudio is actively downloading bytes — nil
+    /// during listing, compiling, and after the model is cached. Drives
+    /// the play-button progress ring; users only ever see this on a fresh
+    /// install or the first time they switch to a not-yet-downloaded engine.
+    @Published var modelDownloadProgress: Double?
 
     /// Single source of truth derives from `phase`. Existing call sites that
     /// only need to know "is the engine actively capturing audio" keep
@@ -143,7 +178,7 @@ actor TranscriptionService {
             await TranscriptionStatus.shared.event("Model ready (\(desired.rawValue))")
         } catch {
             loadTask = nil
-            await TranscriptionStatus.shared.set(.error(String(describing: error)))
+            await TranscriptionStatus.shared.set(.error(humaniseModelLoadError(error)))
             await TranscriptionStatus.shared.event("Model load failed: \(error)")
             throw error
         }
@@ -156,6 +191,24 @@ actor TranscriptionService {
 
         await unloadCurrent()
 
+        // Publish download fraction during the .downloading phase; reset to
+        // nil for listing/compiling and on completion, so the play-button ring
+        // only shows real byte transfer.
+        let progressHandler: DownloadUtils.ProgressHandler = { progress in
+            Task { @MainActor in
+                if case .downloading = progress.phase {
+                    TranscriptionStatus.shared.modelDownloadProgress = progress.fractionCompleted
+                } else {
+                    TranscriptionStatus.shared.modelDownloadProgress = nil
+                }
+            }
+        }
+        defer {
+            Task { @MainActor in
+                TranscriptionStatus.shared.modelDownloadProgress = nil
+            }
+        }
+
         switch mode {
         case .streaming:
             let m = StreamingEouAsrManager(
@@ -163,12 +216,13 @@ actor TranscriptionService {
                 chunkSize: .ms320,
                 eouDebounceMs: 999_999 // effectively disabled; overlay tap stops
             )
-            try await m.loadModels()
+            try await m.loadModels(to: nil, configuration: nil, progressHandler: progressHandler)
             self.streamingManager = m
         case .tdt:
             let models = try await AsrModels.downloadAndLoad(
                 configuration: mlConfig,
-                version: .v3
+                version: .v3,
+                progressHandler: progressHandler
             )
             let m = AsrManager(config: .default)
             try await m.loadModels(models)
@@ -398,7 +452,7 @@ actor TranscriptionService {
             streamContinuation?.finish()
             streamContinuation = nil
             self.recorder = nil
-            await notifyError(.modelLoadFailed(String(describing: error)))
+            await notifyError(.modelLoadFailed(humaniseModelLoadError(error)))
             return
         }
 

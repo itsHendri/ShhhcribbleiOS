@@ -9,17 +9,12 @@ struct RecordingOverlayView: View {
     var body: some View {
         if status.overlayVisible {
             ZStack {
-                LinearGradient(
-                    colors: [Color.black, Color(red: 0.10, green: 0.10, blue: 0.12)],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .ignoresSafeArea()
+                Color(.systemBackground)
+                    .ignoresSafeArea()
 
                 phaseContent
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .preferredColorScheme(.dark)
             .transition(.scale(scale: 0.92).combined(with: .opacity))
         }
     }
@@ -42,7 +37,7 @@ struct RecordingOverlayView: View {
         VStack(spacing: 20) {
             Text(timeString)
                 .font(.system(size: 17, weight: .semibold, design: .monospaced))
-                .foregroundStyle(.white.opacity(0.55))
+                .foregroundStyle(.secondary)
                 .padding(.top, 24)
 
             SoundwaveBars(audioLevel: status.audioLevel)
@@ -56,12 +51,12 @@ struct RecordingOverlayView: View {
                 Button(action: cancel) {
                     Text("Cancel")
                         .font(.system(size: 17, weight: .semibold, design: .rounded))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                         .frame(maxWidth: .infinity)
                         .frame(height: 56)
                         .background(
                             RoundedRectangle(cornerRadius: 28, style: .continuous)
-                                .fill(Color.white.opacity(0.12))
+                                .fill(Color(.tertiarySystemFill))
                         )
                 }
 
@@ -76,7 +71,7 @@ struct RecordingOverlayView: View {
                     .frame(height: 56)
                     .background(
                         RoundedRectangle(cornerRadius: 28, style: .continuous)
-                            .fill(Color(red: 0.25, green: 0.55, blue: 1.0))
+                            .fill(Color.accentColor)
                     )
                 }
             }
@@ -123,17 +118,17 @@ private struct ErrorCard: View {
             Spacer()
             Image(systemName: icon)
                 .font(.system(size: 44, weight: .light))
-                .foregroundStyle(.white.opacity(0.85))
+                .foregroundStyle(iconColor)
 
             VStack(spacing: 8) {
                 Text(title)
                     .font(.system(size: 22, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .multilineTextAlignment(.center)
 
                 Text(error.message)
                     .font(.system(size: 15))
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
             }
@@ -141,34 +136,47 @@ private struct ErrorCard: View {
             Spacer()
 
             VStack(spacing: 12) {
-                if let primary = primaryAction {
-                    Button(action: primary.action) {
-                        Text(primary.label)
-                            .font(.system(size: 17, weight: .semibold, design: .rounded))
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 56)
-                            .background(
-                                RoundedRectangle(cornerRadius: 28, style: .continuous)
-                                    .fill(Color(red: 0.25, green: 0.55, blue: 1.0))
-                            )
-                    }
-                }
+                primaryActionButton
 
                 Button(action: dismiss) {
                     Text("Dismiss")
                         .font(.system(size: 17, weight: .semibold, design: .rounded))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                         .frame(maxWidth: .infinity)
                         .frame(height: 56)
                         .background(
                             RoundedRectangle(cornerRadius: 28, style: .continuous)
-                                .fill(Color.white.opacity(0.12))
+                                .fill(Color(.tertiarySystemFill))
                         )
                 }
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 8)
+        }
+    }
+
+    @ViewBuilder
+    private var primaryActionButton: some View {
+        switch error {
+        case .micPermissionDenied:
+            Button {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+                dismiss()
+            } label: {
+                Text("Open Settings")
+                    .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 56)
+                    .background(
+                        RoundedRectangle(cornerRadius: 28, style: .continuous)
+                            .fill(Color.accentColor)
+                    )
+            }
+        case .modelLoadFailed, .other:
+            RetryButton(onComplete: dismiss)
         }
     }
 
@@ -180,6 +188,13 @@ private struct ErrorCard: View {
         }
     }
 
+    private var iconColor: Color {
+        switch error {
+        case .micPermissionDenied: return .orange
+        case .modelLoadFailed, .other: return .red
+        }
+    }
+
     private var title: String {
         switch error {
         case .micPermissionDenied: return "Microphone access needed"
@@ -188,34 +203,48 @@ private struct ErrorCard: View {
         }
     }
 
-    private struct Action {
-        let label: String
-        let action: () -> Void
-    }
-
-    private var primaryAction: Action? {
-        switch error {
-        case .micPermissionDenied:
-            return Action(label: "Open Settings") {
-                if let url = URL(string: UIApplication.openSettingsURLString) {
-                    UIApplication.shared.open(url)
-                }
-                dismiss()
-            }
-        case .modelLoadFailed, .other:
-            return Action(label: "Retry") {
-                Task {
-                    await TranscriptionService.shared.reloadModel()
-                    await MainActor.run { dismiss() }
-                }
-            }
-        }
-    }
-
     private func dismiss() {
         TranscriptionStatus.shared.partialSnippet = ""
         TranscriptionStatus.shared.launchedViaURL = false
         TranscriptionStatus.shared.setPhase(.idle)
+    }
+}
+
+// Retry button with its own reload state so the spinner doesn't depend on
+// parent re-renders. ~3-5 s on cold model load — without feedback the user
+// double-taps.
+private struct RetryButton: View {
+    let onComplete: () -> Void
+    @State private var reloading = false
+
+    var body: some View {
+        Button {
+            reloading = true
+            Task {
+                await TranscriptionService.shared.reloadModel()
+                await MainActor.run {
+                    reloading = false
+                    onComplete()
+                }
+            }
+        } label: {
+            Group {
+                if reloading {
+                    ProgressView().tint(.white)
+                } else {
+                    Text("Retry")
+                        .font(.system(size: 17, weight: .semibold, design: .rounded))
+                }
+            }
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .frame(height: 56)
+            .background(
+                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    .fill(Color.accentColor)
+            )
+        }
+        .disabled(reloading)
     }
 }
 
@@ -246,7 +275,7 @@ struct SoundwaveBars: View {
                     // Bars span 4 pt (silent) → ~95% of frame height (loud).
                     let h = max(4, shaped * Double(geo.size.height) * 0.95)
                     Capsule()
-                        .fill(Color.white.opacity(0.85))
+                        .fill(Color.accentColor)
                         .frame(width: 5, height: h)
                         .animation(.easeOut(duration: 0.08), value: history[i])
                 }
@@ -305,6 +334,9 @@ struct ScrollingLiveText: View {
             // render half-faded. The mask interpolates from "fully opaque"
             // (no effect) to the soft gradient as the displayed text length
             // approaches the threshold, with an animated transition.
+            // Black here is the alpha channel for `.mask(_:)`, NOT a visible
+            // colour — fully opaque black = visible, transparent = hidden.
+            // Don't "system-colour" these stops.
             LinearGradient(
                 stops: [
                     .init(color: .black.opacity(1.0 - maskOpacity),                location: 0.00),
@@ -352,7 +384,7 @@ struct ScrollingLiveText: View {
 
         var attr = AttributedString(raw)
         // Default colour for everything (older content).
-        attr.foregroundColor = Color.white.opacity(0.32)
+        attr.foregroundColor = Color.primary.opacity(0.32)
 
         // Find word ranges by walking backwards from the end. We treat
         // any whitespace as a word boundary; `raw` may end mid-word so
@@ -388,7 +420,7 @@ struct ScrollingLiveText: View {
         for (i, nsRange) in rangesFromEnd.enumerated() {
             guard let range = Range(nsRange, in: raw),
                   let attrRange = Range(range, in: attr) else { continue }
-            attr[attrRange].foregroundColor = Color.white.opacity(tiers[i])
+            attr[attrRange].foregroundColor = Color.primary.opacity(tiers[i])
         }
         return attr
     }

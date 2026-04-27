@@ -251,13 +251,13 @@ struct ShhhcribbleShortcuts: AppShortcutsProvider {
 
 | Key | Type | Default | What it does |
 |---|---|---|---|
-| `selectedParakeetModel` | String | `"parakeet-v3"` | TDT v3 or EOU streaming |
-| `fillerFilterEnabled` | Bool | `true` | Strip um/uh/hmm etc. |
-| `customHotwords` | [String] | `[]` | Hotword biasing passed to FluidAudio |
+| `asrMode` | String (`AsrMode.rawValue`) | `"streaming"` | Engine choice: `streaming` (StreamingEouAsrManager) or `tdt` (Parakeet TDT v3 via AsrManager) |
+| `filterFillerWords` | Bool | `true` | Strip um/uh/hmm etc. |
+| `customHotwords` | [String] | `[]` | Casing-rewrite list (NOT real engine biasing — see "Vocabulary pipeline" notes) |
 | `substitutionRules` | Data (JSON) | `{}` | Key-value find-replace dictionary |
 | `customFillerWords` | [String] | `[]` | User-added filler words |
 | `onboardingComplete` | Bool | `false` | Show onboarding on first launch |
-| `cpuFallbackEnabled` | Bool | `false` | Debug: force CPU instead of ANE |
+| `useANE` | Bool | `true` | Run model on Apple Neural Engine. **Inverted semantics**: `false` forces CPU. |
 
 ---
 
@@ -339,10 +339,18 @@ The keyboard extension (`ShhhcribbleKeyboard`) injects transcribed text directly
 
 **Sprint 4 — Settings + polish**
 14. ✅ `SettingsView` — vocabulary section with NavigationLinks to `CustomWordsView`, `SubstitutionsView`, `FillerWordsView`. Filler-words toggle lives inside its own screen now. Live counts shown in the row labels.
-15. `OnboardingView` — 3 screens + deep link to Control Center settings (deferred to pre-TestFlight)
+15. ✅ `OnboardingView` — 3 screens + deep link to Control Center settings (shipped at c678245 alongside the Siri/Shortcuts/Back Tap intent registration fix)
 16. ✅ Audio interruption handling (phone call) — wired via `AudioInterruptionObserver`. AirPods disconnect handled via `AVAudioEngineConfigurationChange` observer in `AudioRecorder` (rebuilds engine, preserves captured samples). Verified on device 2026-04-27.
 17. ✅ Error states — `RecordingPhase` enum on `TranscriptionStatus` (`.idle`, `.recording`, `.error(RecordingError)`). Mic permission denied → "Open Settings" card. Model load failed → Retry card. Empty transcript → "No speech detected" toast (no haptic, no error UI; overlay collapses to `.idle`). The two error variants render inside the existing dark recording overlay; the overlay's visibility guard is now `status.overlayVisible`. `isRecording` is a computed property derived from `phase == .recording`.
-18. Visual polish — typography, waveform animation, dark mode (deferred)
+18. Visual polish — light/dark parity ✅ (Sprint 4.5); typography pass + waveform animation refinement deferred to pre-TestFlight.
+
+**Sprint 4.5 — pre-TestFlight polish (shipped 2026-04-27)**
+A1. ✅ Recording overlay → system colour scheme. Removed the hand-tuned dark gradient and `.preferredColorScheme(.dark)` lock; overlay now follows light/dark via `Color(.systemBackground)`, muted button fills via `Color(.tertiarySystemFill)`, transcript tiers via `Color.primary.opacity(...)`. Soundwave bars + filled prominent buttons use `Color.accentColor`. Error icons gain severity colour (`.orange` for mic permission, `.red` for model failure). The `ScrollingLiveText` mask gradient keeps `.black` stops because that's the alpha channel for `.mask(_:)` — see the inline comment.
+A2. ✅ Retry-button spinner. `RetryButton` is now its own private view inside `ErrorCard` with `@State var reloading` swapping label for `ProgressView` during `reloadModel()`. Disables itself while reloading so the user can't double-tap.
+A3. ✅ AppStorage table in CLAUDE.md aligned with reality (`asrMode` / `useANE`).
+A4. ✅ Live Activity multi-banner watch-list logged in "Known minor issues".
+A5. ✅ Humanised model-load errors. New helper `humaniseModelLoadError(_:)` in [TranscriptionService.swift](ShhhcribbleiOS/Services/TranscriptionService.swift) maps common `NSURLError` codes (offline, timeout, DNS) and `NSPOSIXErrorDomain.ENOSPC` (disk full) to user-readable copy. Replaces both `String(describing: error)` call sites — one for `TranscriptionStatus.model = .error(...)` (Settings status row), one for `RecordingError.modelLoadFailed(...)` (in-overlay error card). Unknown errors fall back to `error.localizedDescription`. Raw error still goes to `os.Logger` via the `event(...)` channel for debugging.
+A6. ✅ Model-download progress ring. New `@Published var modelDownloadProgress: Double?` on `TranscriptionStatus` — non-nil only during the FluidAudio `.downloading` phase (nil during `.listing` / `.compiling` / cached path). `loadModel(mode:)` passes a `DownloadUtils.ProgressHandler` to both `StreamingEouAsrManager.loadModels(to:configuration:progressHandler:)` and `AsrModels.downloadAndLoad(..., progressHandler:)`. `StartRecordingButton` overlays a `Circle().trim(from: 0, to: progress)` accent ring at 66×66 (button is 56×56) with `.allowsHitTesting(false)`. User only ever sees this on a fresh install or first switch to a not-yet-cached engine. Watch in future sessions in case it needs optimisation; user reported it works on both engines as of 2026-04-27.
 
 **Sprint 5 — Keyboard extension (Phase 2)**
 19. **PREREQ — Restore App Group + paid Developer Program signing.**
@@ -479,6 +487,14 @@ The `TypingViewModel`'s rewind logic is still correct for genuine ASR revisions;
 
 The Live Activity waveform stays self-driven (sin wave via TimelineView) — pushing audio level updates through ActivityKit isn't viable.
 
+### Model load — when, progress, errors
+
+**When the download fires.** [ShhhcribbleApp.init()](ShhhcribbleiOS/App/ShhhcribbleApp.swift) kicks off `Task.detached(priority: .userInitiated) { try? await TranscriptionService.shared.ensureModelLoaded() }` immediately at process start — in parallel with onboarding, before the user taps anything. By the time someone gets through 3 onboarding screens the streaming model (smaller) is usually cached; TDT v3 (~494 MB) takes longer but still front-loads against onboarding rather than the play button. `recordAndTranscribe` also `async let modelReady = ensureModelLoaded()` as a defensive second trigger, so a recording started before the load finishes still resolves correctly.
+
+**Progress reporting.** FluidAudio exposes a `progressHandler: DownloadUtils.ProgressHandler?` on both `StreamingEouAsrManager.loadModels(to:configuration:progressHandler:)` and `AsrModels.downloadAndLoad(...)`. The handler streams `DownloadProgress { fractionCompleted, phase }` where `phase ∈ {.listing, .downloading(completedFiles, totalFiles), .compiling(modelName)}`. We publish `fractionCompleted` to `TranscriptionStatus.modelDownloadProgress` only during the `.downloading` phase — listing is sub-second and compiling has no meaningful fraction, so they reset the published value to nil. The play-button ring binds directly to that property.
+
+**Error humanisation.** Raw FluidAudio errors are NSError-bridged URL/POSIX errors; `String(describing: error)` dumps the entire userInfo blob (the offline case is a 1.2 KB wall of `NSURLErrorDomain` keys), which rendered as the Settings status row before Sprint 4.5. `humaniseModelLoadError(_:)` maps the common cases to short, action-oriented copy and falls back to `error.localizedDescription` for unknown errors. The raw error still goes to `os.Logger` via the diag channel for debugging — only the user-facing string is humanised.
+
 ### Streaming vs Parakeet TDT v3
 
 Two different FluidAudio engines, **not** simultaneously loaded. The `AsrMode` AppStorage choice swaps which one `TranscriptionService` instantiates:
@@ -584,9 +600,10 @@ Logged at the end of Sprint 4 — none of these block TestFlight, but flagging s
 
 - **Retry button has no progress feedback.** In the model-load-failed error card, tapping Retry runs `TranscriptionService.shared.reloadModel()` (3–5 s on a cold load) before dismissing the overlay. During that wait the button stays tappable and there's no spinner — user has no signal that anything is happening. ~10 lines: add an `@State var reloading = false` to `ErrorCard`, swap the label for a `ProgressView` while reloading, disable the button. Low priority because model-load failure is rare on a healthy device.
 - **`SubstitutionPass.currentRules()` rebuilds the dict per call.** [String+Substitutions.swift](ShhhcribbleiOS/Extensions/String+Substitutions.swift) reads `UserDefaults` and JSON-decodes `substitutionRules` every time it's called. During streaming partials that's ~3–5 invocations/sec. Imperceptible at current dict sizes (single-digit entries) but the cleaner shape is a cached snapshot invalidated on AppStorage change. Defer until profiling shows it.
-- **Stale AppStorage keys in the spec table.** The "Pref keys" table above lists `selectedParakeetModel` and `cpuFallbackEnabled` — the code actually uses `asrMode` and `useANE`. Worth a docs-only pass to align the table with reality. Not load-bearing.
 - **Custom Words footer copy** — "Auto-corrects the casing of these words in transcripts. Best for proper nouns and brand names that Parakeet hears correctly but doesn't capitalise. For mis-transcribed words, use Substitutions instead." Pending a real on-device read; tighten if it reads off.
+- **TDT hallucinates phantom words on silence.** In Parakeet TDT v3 mode, recording near-silence produces a phantom transcript that always starts with "Recording" and is sometimes followed by a single word like "yeah" or "hello". Streaming mode does not exhibit this — it stays at blank tokens. Likely cause: the TDT decoder's language-model prior dominates when the acoustic signal is weak (a known RNN-T / TDT failure mode), and the start-of-recording click + room tone in the first ~0.5 s maps to a high-frequency English word ("Recording" is plausible). **Possible fixes (not yet attempted):** (a) RMS-energy VAD gate that skips transcription when the buffer never crosses a threshold; (b) drop the first ~200 ms of buffer before handing to TDT to skip the start-click. Neither is trivial — VAD needs threshold tuning across mic types (built-in vs AirPods vs Continuity), and the leading-trim doesn't help mid-utterance silence. Defer until enough user reports surface to justify the tuning effort.
+- **Live Activity multi-banner stacking — watch-list.** During Sprint 4, recording back-to-back occasionally left an orphaned Live Activity banner from the previous session, leaving two banners visible. Fixed in [ShhhcribbleActivityManager.swift](ShhhcribbleiOS/Services/ShhhcribbleActivityManager.swift) by (a) reaping any pre-existing activities at `start()` time and on app foreground via `reapOrphanedActivities()`, and (b) inserting a 3 s delay before `Activity.end(...)` so the dismissal animation completes before a new activity starts. User confirmed banners now dismiss cleanly. **If it recurs:** likely either `reapOrphanedActivities` isn't iterating every `Activity<ShhhcribbleActivityAttributes>.activities` instance (e.g. activities started in a previous app session that were never observed by this process), or the `end()` / `start()` race is back (rapid double-trigger from Siri or a stuck Control Center widget). Investigate by logging `Activity.activities.count` at every start/end, and by adding a fingerprint per activity so pre-existing ones can be distinguished from in-flight ones.
 
 ---
 
-*Last updated: April 2026 — Sprint 4 (Settings + error UX) shipped 2026-04-27 alongside Sprint 2/3 and tag UI.*
+*Last updated: April 2026 — Sprint 4.5 (light/dark overlay, retry spinner, humanised model-load errors, download progress ring) shipped 2026-04-27.*

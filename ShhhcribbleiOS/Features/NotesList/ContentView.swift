@@ -20,8 +20,11 @@ struct ContentView: View {
                 TabPill(tab: $tab)
                 Spacer()
                 if !status.isRecording {
-                    StartRecordingButton(isEnabled: status.model == .ready)
-                        .transition(.scale(scale: 0.6).combined(with: .opacity))
+                    StartRecordingButton(
+                        isEnabled: status.model == .ready,
+                        downloadProgress: status.modelDownloadProgress
+                    )
+                    .transition(.scale(scale: 0.6).combined(with: .opacity))
                 }
             }
             .padding(.horizontal, 18)
@@ -91,6 +94,9 @@ private struct GlassPillBackground: ViewModifier {
 
 private struct StartRecordingButton: View {
     let isEnabled: Bool
+    /// Non-nil only while the first-ever model download is in progress.
+    /// Drives the circular ring that wraps the play button.
+    let downloadProgress: Double?
 
     var body: some View {
         Button(action: start) {
@@ -107,7 +113,36 @@ private struct StartRecordingButton: View {
         }
         .buttonStyle(.plain)
         .disabled(!isEnabled)
-        .accessibilityLabel("Start transcription")
+        .accessibilityLabel(accessibilityLabel)
+        .overlay(progressRing)
+    }
+
+    @ViewBuilder
+    private var progressRing: some View {
+        if let progress = downloadProgress {
+            ZStack {
+                Circle()
+                    .stroke(Color(red: 0.25, green: 0.55, blue: 1.0).opacity(0.18),
+                            lineWidth: 3)
+                Circle()
+                    // Floor at a tiny sliver so the ring is visible the
+                    // instant the download begins, even at fraction ≈ 0.
+                    .trim(from: 0, to: max(0.015, progress))
+                    .stroke(Color(red: 0.25, green: 0.55, blue: 1.0),
+                            style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                    .animation(.easeOut(duration: 0.25), value: progress)
+            }
+            .frame(width: 66, height: 66)
+            .allowsHitTesting(false)
+        }
+    }
+
+    private var accessibilityLabel: String {
+        if let progress = downloadProgress {
+            return "Downloading model, \(Int(progress * 100)) percent"
+        }
+        return "Start transcription"
     }
 
     private func start() {

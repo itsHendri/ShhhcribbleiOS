@@ -550,4 +550,15 @@ Empty transcript ("no speech detected") is **not** a phase. It's surfaced via `T
 
 ---
 
+## Known minor issues / future polish
+
+Logged at the end of Sprint 4 — none of these block TestFlight, but flagging so they're not re-discovered.
+
+- **Retry button has no progress feedback.** In the model-load-failed error card, tapping Retry runs `TranscriptionService.shared.reloadModel()` (3–5 s on a cold load) before dismissing the overlay. During that wait the button stays tappable and there's no spinner — user has no signal that anything is happening. ~10 lines: add an `@State var reloading = false` to `ErrorCard`, swap the label for a `ProgressView` while reloading, disable the button. Low priority because model-load failure is rare on a healthy device.
+- **`SubstitutionPass.currentRules()` rebuilds the dict per call.** [String+Substitutions.swift](ShhhcribbleiOS/Extensions/String+Substitutions.swift) reads `UserDefaults` and JSON-decodes `substitutionRules` every time it's called. During streaming partials that's ~3–5 invocations/sec. Imperceptible at current dict sizes (single-digit entries) but the cleaner shape is a cached snapshot invalidated on AppStorage change. Defer until profiling shows it.
+- **Stale AppStorage keys in the spec table.** The "Pref keys" table above lists `selectedParakeetModel` and `cpuFallbackEnabled` — the code actually uses `asrMode` and `useANE`. Worth a docs-only pass to align the table with reality. Not load-bearing.
+- **Custom Words footer copy** — "Auto-corrects the casing of these words in transcripts. Best for proper nouns and brand names that Parakeet hears correctly but doesn't capitalise. For mis-transcribed words, use Substitutions instead." Pending a real on-device read; tighten if it reads off.
+
+---
+
 *Last updated: April 2026 — Sprint 4 (Settings + error UX) shipped 2026-04-27 alongside Sprint 2/3 and tag UI.*

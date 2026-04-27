@@ -10,6 +10,11 @@ struct SettingsView: View {
 
     @State private var micPermission: AVAudioApplication.recordPermission = .undetermined
 
+    // Counts for inline detail labels — refreshed on appear.
+    @State private var hotwordCount: Int = 0
+    @State private var substitutionCount: Int = 0
+    @State private var customFillerCount: Int = 0
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
@@ -24,7 +29,7 @@ struct SettingsView: View {
 
                 Form {
                     transcriptionStyleSection
-                    fillerWordsSection
+                    vocabularySection
                     performanceSection
                     permissionsSection
                     aboutSection
@@ -33,7 +38,10 @@ struct SettingsView: View {
             }
             .background(Color(.systemGroupedBackground))
             .toolbar(.hidden, for: .navigationBar)
-            .onAppear { refreshPermissions() }
+            .onAppear {
+                refreshPermissions()
+                refreshCounts()
+            }
         }
     }
 
@@ -65,13 +73,52 @@ struct SettingsView: View {
         }
     }
 
-    private var fillerWordsSection: some View {
+    private var vocabularySection: some View {
         Section {
-            Toggle("Remove filler words", isOn: $filterFillerWords)
+            NavigationLink {
+                CustomWordsView()
+                    .onDisappear { refreshCounts() }
+            } label: {
+                detailRow(
+                    title: "Custom Words",
+                    detail: hotwordCount == 0 ? "None" : "\(hotwordCount)"
+                )
+            }
+
+            NavigationLink {
+                SubstitutionsView()
+                    .onDisappear { refreshCounts() }
+            } label: {
+                detailRow(
+                    title: "Substitutions",
+                    detail: substitutionCount == 0 ? "None" : "\(substitutionCount)"
+                )
+            }
+
+            NavigationLink {
+                FillerWordsView()
+                    .onDisappear { refreshCounts() }
+            } label: {
+                detailRow(
+                    title: "Filler Words",
+                    detail: filterFillerWords
+                        ? (customFillerCount == 0 ? "On" : "On · +\(customFillerCount)")
+                        : "Off"
+                )
+            }
         } header: {
-            Text("Filler words")
+            Text("Vocabulary")
         } footer: {
-            Text("Removes \"um\", \"uh\", \"hmm\" and similar filler words from transcriptions.")
+            Text("Auto-correct casing for proper nouns, replace recurring phrases, and remove filler words from your transcripts.")
+        }
+    }
+
+    private func detailRow(title: String, detail: String) -> some View {
+        HStack {
+            Text(title)
+            Spacer()
+            Text(detail)
+                .foregroundStyle(.secondary)
         }
     }
 
@@ -152,6 +199,17 @@ struct SettingsView: View {
 
     private func refreshPermissions() {
         micPermission = AVAudioApplication.shared.recordPermission
+    }
+
+    private func refreshCounts() {
+        hotwordCount = (UserDefaults.standard.array(forKey: "customHotwords") as? [String])?.count ?? 0
+        customFillerCount = (UserDefaults.standard.array(forKey: "customFillerWords") as? [String])?.count ?? 0
+        if let data = UserDefaults.standard.data(forKey: "substitutionRules"),
+           let dict = try? JSONDecoder().decode([String: String].self, from: data) {
+            substitutionCount = dict.count
+        } else {
+            substitutionCount = 0
+        }
     }
 
     private func modeLabel(_ mode: AsrMode) -> String {

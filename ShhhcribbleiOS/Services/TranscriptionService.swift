@@ -15,6 +15,30 @@ enum ModelStatus: Equatable {
     case error(String)
 }
 
+enum RecordingPhase: Equatable {
+    case idle
+    case recording
+    case noSpeech
+    case error(RecordingError)
+}
+
+enum RecordingError: Equatable {
+    case micPermissionDenied
+    case modelLoadFailed(String)
+    case other(String)
+
+    var message: String {
+        switch self {
+        case .micPermissionDenied:
+            return "Microphone access is off. Enable it in Settings to record."
+        case .modelLoadFailed(let detail):
+            return "The transcription model couldn't load.\n\(detail)"
+        case .other(let detail):
+            return detail
+        }
+    }
+}
+
 enum AsrMode: String, CaseIterable, Sendable {
     case streaming
     case tdt
@@ -37,11 +61,22 @@ final class TranscriptionStatus: ObservableObject {
     static let shared = TranscriptionStatus()
     @Published var model: ModelStatus = .notLoaded
     @Published var lastEvent: String = ""
-    @Published var isRecording: Bool = false
+    @Published var phase: RecordingPhase = .idle
     @Published var partialSnippet: String = ""
     @Published var launchedViaURL: Bool = false
     /// Smoothed mic input level, 0...1, for visualizers.
     @Published var audioLevel: Double = 0
+
+    /// Single source of truth derives from `phase`. Existing call sites that
+    /// only need to know "is the engine actively capturing audio" keep
+    /// reading this without caring about the new error/noSpeech states.
+    var isRecording: Bool { phase == .recording }
+
+    /// True whenever the recording overlay should be visible — i.e. anything
+    /// other than fully idle. Used by the overlay's visibility guard.
+    var overlayVisible: Bool { phase != .idle }
+
+    private var dismissTask: Task<Void, Never>?
 
     private init() {}
 
@@ -49,6 +84,22 @@ final class TranscriptionStatus: ObservableObject {
     func event(_ text: String) {
         print("[Shhhcribble] \(text)")
         self.lastEvent = text
+    }
+
+    func setPhase(_ newPhase: RecordingPhase) {
+        dismissTask?.cancel()
+        phase = newPhase
+        // No-speech auto-dismiss after ~1s. Errors stay visible until the
+        // user taps Dismiss / Open Settings / Retry.
+        if case .noSpeech = newPhase {
+            dismissTask = Task { [weak self] in
+                try? await Task.sleep(for: .seconds(1))
+                guard !Task.isCancelled else { return }
+                await MainActor.run {
+                    if self?.phase == .noSpeech { self?.phase = .idle }
+                }
+            }
+        }
     }
 }
 
@@ -248,6 +299,26 @@ actor TranscriptionService {
 
     func recordAndTranscribe(trigger: TriggerSource = .manual) async throws {
         guard !recording else { return }
+
+        // Pre-flight mic permission so we don't fail silently inside the
+        // tap install. Surface a typed error UX in the recording overlay.
+        let perm = await MainActor.run { AVAudioApplication.shared.recordPermission }
+        switch perm {
+        case .granted:
+            break
+        case .undetermined:
+            let granted = await AVAudioApplication.requestRecordPermission()
+            if !granted {
+                await TranscriptionStatus.shared.setPhase(.error(.micPermissionDenied))
+                return
+            }
+        case .denied:
+            await TranscriptionStatus.shared.setPhase(.error(.micPermissionDenied))
+            return
+        @unknown default:
+            break
+        }
+
         recording = true
         stopRequested = false
         cancelled = false
@@ -295,7 +366,12 @@ actor TranscriptionService {
             let endId = self.bgTaskId
             self.bgTaskId = .invalid
             Task { @MainActor in
-                TranscriptionStatus.shared.isRecording = false
+                // Only collapse to .idle if we're still mid-recording; if a
+                // branch already moved us to .noSpeech or .error, leave that
+                // state visible so the overlay can render the error UX.
+                if TranscriptionStatus.shared.phase == .recording {
+                    TranscriptionStatus.shared.setPhase(.idle)
+                }
                 if endId != .invalid {
                     UIApplication.shared.endBackgroundTask(endId)
                 }
@@ -338,7 +414,7 @@ actor TranscriptionService {
             streamContinuation?.finish()
             streamContinuation = nil
             self.recorder = nil
-            await notifyError()
+            await notifyError(.modelLoadFailed(String(describing: error)))
             return
         }
 
@@ -419,10 +495,15 @@ actor TranscriptionService {
         }
 
         let filterOn = UserDefaults.standard.object(forKey: "filterFillerWords") as? Bool ?? true
-        let filtered = filterOn ? FillerWordFilter.filter(transcript) : transcript
+        let afterFiller = filterOn ? FillerWordFilter.filter(transcript) : transcript
+        let filtered = SubstitutionPass.apply(afterFiller, rules: SubstitutionPass.currentRules())
         guard !filtered.isEmpty else {
-            await TranscriptionStatus.shared.event("Empty transcript")
-            await notifyError()
+            await TranscriptionStatus.shared.event("Empty transcript — no speech detected")
+            await MainActor.run {
+                TranscriptionStatus.shared.partialSnippet = ""
+                TranscriptionStatus.shared.launchedViaURL = false
+                TranscriptionStatus.shared.setPhase(.noSpeech)
+            }
             return
         }
 
@@ -453,7 +534,8 @@ actor TranscriptionService {
             let text = result.text
             guard !text.isEmpty else { return }
             let filterOn = UserDefaults.standard.object(forKey: "filterFillerWords") as? Bool ?? true
-            let filtered = filterOn ? FillerWordFilter.filter(text) : text
+            let afterFiller = filterOn ? FillerWordFilter.filter(text) : text
+            let filtered = SubstitutionPass.apply(afterFiller, rules: SubstitutionPass.currentRules())
             // In-app overlay gets the full transcript so the typewriter
             // can extend it smoothly. The Live Activity gets only a bounded
             // tail because widget update payloads are rate-limited and the
@@ -492,7 +574,7 @@ actor TranscriptionService {
         streamContinuation?.finish()
         streamContinuation = nil
         recorder = nil
-        await notifyError()
+        await notifyError(.other("Recording failed to start."))
     }
 
     @MainActor
@@ -514,7 +596,8 @@ actor TranscriptionService {
         // while we're still foreground. By the time the user taps the back
         // pill, the clipboard already holds the latest transcript.
         let filterOn = UserDefaults.standard.object(forKey: "filterFillerWords") as? Bool ?? true
-        let filtered = filterOn ? FillerWordFilter.filter(partial) : partial
+        let afterFiller = filterOn ? FillerWordFilter.filter(partial) : partial
+        let filtered = SubstitutionPass.apply(afterFiller, rules: SubstitutionPass.currentRules())
         await MainActor.run {
             ShhhcribbleActivityManager.shared.update(snippet: liveActivitySnippet)
             TranscriptionStatus.shared.partialSnippet = filtered
@@ -526,7 +609,7 @@ actor TranscriptionService {
 
     @MainActor
     private func setUIRecording(_ value: Bool) {
-        TranscriptionStatus.shared.isRecording = value
+        TranscriptionStatus.shared.setPhase(value ? .recording : .idle)
     }
 
     @MainActor
@@ -542,10 +625,11 @@ actor TranscriptionService {
     }
 
     @MainActor
-    private func notifyError() {
+    private func notifyError(_ error: RecordingError) {
         UINotificationFeedbackGenerator().notificationOccurred(.error)
         TranscriptionStatus.shared.partialSnippet = ""
         TranscriptionStatus.shared.launchedViaURL = false
+        TranscriptionStatus.shared.setPhase(.error(error))
     }
 
     // MARK: - Buffer helpers

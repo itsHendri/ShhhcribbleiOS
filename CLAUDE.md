@@ -337,12 +337,12 @@ The keyboard extension (`ShhhcribbleKeyboard`) injects transcribed text directly
 12. ✅ `NotesListView` — search bar (substring on transcript+title), tag filter chips (multi-select **AND**), swipe-to-delete, "Clear All", "Clear filters"
 13. ✅ `NoteDetailView` — full note, inline title + transcript edit, ShareLink, delete-with-confirm, tag editor with autocomplete (sources from all-notes `@Query`)
 
-**Sprint 4 — Settings + polish** (open)
-14. `SettingsView` — filler words, custom vocabulary, substitution rules
-15. `OnboardingView` — 3 screens + deep link to Control Center settings
-16. ✅ Audio interruption handling (phone call) — already wired via `AudioInterruptionObserver`. AirPods disconnect handled via `AVAudioEngineConfigurationChange` observer in `AudioRecorder` (rebuilds engine, preserves captured samples).
-17. Error states (mic permission denied, model not loaded, no speech)
-18. Visual polish — typography, waveform animation, dark mode
+**Sprint 4 — Settings + polish**
+14. ✅ `SettingsView` — vocabulary section with NavigationLinks to `CustomWordsView`, `SubstitutionsView`, `FillerWordsView`. Filler-words toggle lives inside its own screen now. Live counts shown in the row labels.
+15. `OnboardingView` — 3 screens + deep link to Control Center settings (deferred to pre-TestFlight)
+16. ✅ Audio interruption handling (phone call) — wired via `AudioInterruptionObserver`. AirPods disconnect handled via `AVAudioEngineConfigurationChange` observer in `AudioRecorder` (rebuilds engine, preserves captured samples). Verified on device 2026-04-27.
+17. ✅ Error states — `RecordingPhase` enum on `TranscriptionStatus` (`.idle`, `.recording`, `.noSpeech`, `.error(RecordingError)`). Mic permission denied → "Open Settings" card. Model load failed → Retry card. Empty transcript → distinct `.noSpeech` indicator (~1 s auto-dismiss, no error haptic). All render inside the existing dark recording overlay; the overlay's visibility guard is now `status.overlayVisible`. `isRecording` is a computed property derived from `phase == .recording` so existing call sites still work.
+18. Visual polish — typography, waveform animation, dark mode (deferred)
 
 **Sprint 5 — Keyboard extension (Phase 2)**
 19. **PREREQ — Restore App Group + paid Developer Program signing.**
@@ -525,6 +525,28 @@ Snapshot / `scheduleRestore` / `restoreImmediately` are reserved for the Sprint 
 
 The post-finish path in `recordAndTranscribe` checks `cancelled` and returns early, **before** `commit` — so no SwiftData write, no toast, no clipboard touch. The Cancel button in `RecordingView` calls `cancelRecording`. The Stop button still calls `stopRecording` (which finalises transcription and saves).
 
+### Vocabulary pipeline — substitutions, hotwords, custom fillers
+
+Final transcript is built by three deterministic passes, in order:
+
+1. **Filler-word filter** — built-in regexes in [String+Filters.swift](ShhhcribbleiOS/Extensions/String+Filters.swift) plus user-added `customFillerWords` (whole-word, case-insensitive). Gated by the `filterFillerWords` toggle.
+2. **Substitution pass** — [String+Substitutions.swift](ShhhcribbleiOS/Extensions/String+Substitutions.swift) reads `substitutionRules` (Data, JSON-encoded `[String: String]`) AND synthesises one rule per `customHotwords` entry as `H.lowercased() → H`. Explicit substitutions win on key collision. Whole-word, case-insensitive.
+
+All three pipeline sites in `TranscriptionService` (final stop at ~line 472, TDT live at ~507, streaming partial at ~570) run filler → substitution in that order so substitutions don't get stripped.
+
+**FluidAudio biasing limitation.** `customHotwords` is implemented as a casing-rewrite, NOT real engine biasing. FluidAudio exposes `configureVocabularyBoosting` only on `SlidingWindowAsrManager`; the two managers we use (`StreamingEouAsrManager`, `AsrManager` for TDT) don't have it. To get real biasing for misrecognised words (not just casing) we'd need to swap an ASR manager — out of scope for v1. The Settings copy reflects this honestly: "Best for proper nouns Parakeet hears correctly but doesn't capitalise. For mis-transcribed words, use Substitutions instead."
+
+### Recording phase state machine
+
+`TranscriptionStatus.phase: RecordingPhase` is the single source of truth for the overlay:
+
+- `.idle` — overlay hidden.
+- `.recording` — main capture UI (waveform + live transcript + Cancel/Copy & Save).
+- `.noSpeech` — neutral "No speech detected" card, auto-dismisses after 1 s via a Task spun off inside `setPhase`. No haptic, no clipboard write, no Note saved.
+- `.error(RecordingError)` — sticky until user taps Dismiss / Open Settings / Retry. Cases: `.micPermissionDenied` (preflight in `recordAndTranscribe` before recording flag flips), `.modelLoadFailed(String)`, `.other(String)`.
+
+`isRecording: Bool` is a computed property over `phase == .recording`. The `defer` block in `recordAndTranscribe` only collapses to `.idle` when phase is still `.recording` — sticky error/noSpeech states survive teardown so the overlay stays visible. Mic permission preflight uses `AVAudioApplication.requestRecordPermission()` (iOS 17+ async API).
+
 ---
 
-*Last updated: April 2026 — based on planning sessions and Mac version lessons (itsHendri/Shhhcribble v1.3.0). Sprint 2/3 and tag UI shipped April 2026.*
+*Last updated: April 2026 — Sprint 4 (Settings + error UX) shipped 2026-04-27 alongside Sprint 2/3 and tag UI.*

@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct RecordingOverlayView: View {
     @ObservedObject var status: TranscriptionStatus
@@ -6,7 +7,7 @@ struct RecordingOverlayView: View {
     @State private var timer: Timer?
 
     var body: some View {
-        if status.isRecording {
+        if status.overlayVisible {
             ZStack {
                 LinearGradient(
                     colors: [Color.black, Color(red: 0.10, green: 0.10, blue: 0.12)],
@@ -15,56 +16,74 @@ struct RecordingOverlayView: View {
                 )
                 .ignoresSafeArea()
 
-                VStack(spacing: 20) {
-                    Text(timeString)
-                        .font(.system(size: 17, weight: .semibold, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.55))
-                        .padding(.top, 24)
-
-                    SoundwaveBars(audioLevel: status.audioLevel)
-                        .frame(width: 200, height: 72)
-
-                    ScrollingLiveText(text: status.partialSnippet)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .padding(.horizontal, 28)
-
-                    HStack(spacing: 16) {
-                        Button(action: cancel) {
-                            Text("Cancel")
-                                .font(.system(size: 17, weight: .semibold, design: .rounded))
-                                .foregroundStyle(.white)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 56)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 28, style: .continuous)
-                                        .fill(Color.white.opacity(0.12))
-                                )
-                        }
-
-                        Button(action: stop) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "doc.on.doc.fill")
-                                Text("Copy & Save")
-                            }
-                            .font(.system(size: 17, weight: .semibold, design: .rounded))
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 56)
-                            .background(
-                                RoundedRectangle(cornerRadius: 28, style: .continuous)
-                                    .fill(Color(red: 0.25, green: 0.55, blue: 1.0))
-                            )
-                        }
-                    }
-                    .padding(.horizontal, 24)
-                    .padding(.bottom, 8)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                phaseContent
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .preferredColorScheme(.dark)
             .transition(.scale(scale: 0.92).combined(with: .opacity))
-            .onAppear { startTimer() }
-            .onDisappear { stopTimer() }
+        }
+    }
+
+    @ViewBuilder
+    private var phaseContent: some View {
+        switch status.phase {
+        case .recording:
+            recordingContent
+                .onAppear { startTimer() }
+                .onDisappear { stopTimer() }
+        case .noSpeech:
+            NoSpeechCard()
+        case .error(let err):
+            ErrorCard(error: err)
+        case .idle:
+            EmptyView()
+        }
+    }
+
+    private var recordingContent: some View {
+        VStack(spacing: 20) {
+            Text(timeString)
+                .font(.system(size: 17, weight: .semibold, design: .monospaced))
+                .foregroundStyle(.white.opacity(0.55))
+                .padding(.top, 24)
+
+            SoundwaveBars(audioLevel: status.audioLevel)
+                .frame(width: 200, height: 72)
+
+            ScrollingLiveText(text: status.partialSnippet)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(.horizontal, 28)
+
+            HStack(spacing: 16) {
+                Button(action: cancel) {
+                    Text("Cancel")
+                        .font(.system(size: 17, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(
+                            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                                .fill(Color.white.opacity(0.12))
+                        )
+                }
+
+                Button(action: stop) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "doc.on.doc.fill")
+                        Text("Copy & Save")
+                    }
+                    .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 56)
+                    .background(
+                        RoundedRectangle(cornerRadius: 28, style: .continuous)
+                            .fill(Color(red: 0.25, green: 0.55, blue: 1.0))
+                    )
+                }
+            }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 8)
         }
     }
 
@@ -91,6 +110,133 @@ struct RecordingOverlayView: View {
 
     private func cancel() {
         Task { await TranscriptionService.shared.cancelRecording() }
+    }
+}
+
+// MARK: - No-speech indicator
+//
+// Distinct from .error per CLAUDE.md "No speech detected — named state".
+// Auto-dismisses after ~1s via TranscriptionStatus.setPhase logic; the view
+// is purely presentational.
+private struct NoSpeechCard: View {
+    var body: some View {
+        VStack(spacing: 14) {
+            Image(systemName: "waveform")
+                .font(.system(size: 36, weight: .light))
+                .foregroundStyle(.white.opacity(0.55))
+            Text("No speech detected")
+                .font(.system(size: 18, weight: .medium, design: .rounded))
+                .foregroundStyle(.white.opacity(0.8))
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+// MARK: - Error card
+//
+// Visible message + recovery action for the three error cases. Stays until
+// the user taps a button — never auto-dismisses.
+private struct ErrorCard: View {
+    let error: RecordingError
+
+    var body: some View {
+        VStack(spacing: 18) {
+            Spacer()
+            Image(systemName: icon)
+                .font(.system(size: 44, weight: .light))
+                .foregroundStyle(.white.opacity(0.85))
+
+            VStack(spacing: 8) {
+                Text(title)
+                    .font(.system(size: 22, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+
+                Text(error.message)
+                    .font(.system(size: 15))
+                    .foregroundStyle(.white.opacity(0.7))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
+            }
+
+            Spacer()
+
+            VStack(spacing: 12) {
+                if let primary = primaryAction {
+                    Button(action: primary.action) {
+                        Text(primary.label)
+                            .font(.system(size: 17, weight: .semibold, design: .rounded))
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 56)
+                            .background(
+                                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                                    .fill(Color(red: 0.25, green: 0.55, blue: 1.0))
+                            )
+                    }
+                }
+
+                Button(action: dismiss) {
+                    Text("Dismiss")
+                        .font(.system(size: 17, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(
+                            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                                .fill(Color.white.opacity(0.12))
+                        )
+                }
+            }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 8)
+        }
+    }
+
+    private var icon: String {
+        switch error {
+        case .micPermissionDenied: return "mic.slash.fill"
+        case .modelLoadFailed:     return "exclamationmark.triangle.fill"
+        case .other:               return "exclamationmark.circle.fill"
+        }
+    }
+
+    private var title: String {
+        switch error {
+        case .micPermissionDenied: return "Microphone access needed"
+        case .modelLoadFailed:     return "Model couldn't load"
+        case .other:               return "Something went wrong"
+        }
+    }
+
+    private struct Action {
+        let label: String
+        let action: () -> Void
+    }
+
+    private var primaryAction: Action? {
+        switch error {
+        case .micPermissionDenied:
+            return Action(label: "Open Settings") {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+                dismiss()
+            }
+        case .modelLoadFailed, .other:
+            return Action(label: "Retry") {
+                Task {
+                    await TranscriptionService.shared.reloadModel()
+                    await MainActor.run { dismiss() }
+                }
+            }
+        }
+    }
+
+    private func dismiss() {
+        TranscriptionStatus.shared.partialSnippet = ""
+        TranscriptionStatus.shared.launchedViaURL = false
+        TranscriptionStatus.shared.setPhase(.idle)
     }
 }
 

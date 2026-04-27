@@ -25,6 +25,22 @@ enum FillerWordFilter {
         s = s.replacingOccurrences(of: "^[Ll]ike,\\s+",
                                    with: "", options: .regularExpression)
 
+        // User-supplied filler words (whole-word, case-insensitive, optional
+        // trailing comma). Applied alongside the built-in list so users can
+        // strip personal tics like "basically", "literally", "honestly".
+        let custom = (UserDefaults.standard.array(forKey: "customFillerWords") as? [String]) ?? []
+        for raw in custom {
+            let word = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !word.isEmpty else { continue }
+            let escaped = NSRegularExpression.escapedPattern(for: word)
+            let pattern = "\\b\(escaped)\\b,?"
+            s = s.replacingOccurrences(
+                of: pattern,
+                with: " ",
+                options: [.regularExpression, .caseInsensitive]
+            )
+        }
+
         s = s.replacingOccurrences(of: "\\s{2,}", with: " ", options: .regularExpression)
         s = s.trimmingCharacters(in: .whitespacesAndNewlines)
         s = s.replacingOccurrences(of: "^[,;]+\\s*", with: "", options: .regularExpression)

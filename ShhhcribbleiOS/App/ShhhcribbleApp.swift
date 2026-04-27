@@ -46,7 +46,7 @@ struct ShhhcribbleApp: App {
         WindowGroup {
             ContentView()
                 .overlay { RecordingOverlayView(status: status) }
-                .animation(.spring(response: 0.42, dampingFraction: 0.78), value: status.isRecording)
+                .animation(.spring(response: 0.42, dampingFraction: 0.78), value: status.overlayVisible)
                 .onOpenURL { url in handle(url: url) }
                 .onChange(of: scenePhase) { _, phase in
                     // Only auto-stop on backgrounding when the recording was
@@ -80,14 +80,14 @@ struct ShhhcribbleApp: App {
             guard !status.isRecording else { return }
             // Flip synchronously so the overlay covers the launch flash before
             // the actor hop inside recordAndTranscribe can update it.
-            status.isRecording = true
+            status.setPhase(.recording)
             status.launchedViaURL = true
             Task {
                 do {
                     try await TranscriptionService.shared.recordAndTranscribe()
                 } catch {
                     await MainActor.run {
-                        status.isRecording = false
+                        if status.phase == .recording { status.setPhase(.idle) }
                         status.launchedViaURL = false
                     }
                 }

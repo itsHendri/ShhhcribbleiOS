@@ -16,6 +16,8 @@ Runs fully on-device using [FluidAudio](https://github.com/FluidInference/FluidA
 - **Notes list** with per-row Copy + swipe-to-delete; tap a row to copy.
 - **Toast feedback** on every clipboard write.
 - **App Intents** — `StartRecordingIntent` and `StopRecordingIntent` discoverable from Siri / Shortcuts / Back Tap.
+- **Vocabulary settings** — auto-correct casing for proper nouns (Custom Words), apply find/replace rules to transcripts (Substitutions), and add personal filler words to strip (Filler Words).
+- **Inline error UX** in the recording overlay — distinct surfaces for mic permission denied (with Open Settings), no speech detected, and model-load failure (with Retry).
 
 ## Requirements
 
@@ -33,7 +35,7 @@ ShhhcribbleiOS/
 ├── Features/
 │   ├── Recording/         # RecordingOverlayView, SoundwaveBars, ScrollingLiveText
 │   ├── NotesList/         # ContentView (root), NotesListView, ToastManager
-│   └── Settings/          # SettingsView (style, filler words, performance, perms, about)
+│   └── Settings/          # SettingsView + CustomWordsView, SubstitutionsView, FillerWordsView
 ├── Models/                # Note (SwiftData), TriggerSource
 ├── Services/
 │   ├── TranscriptionService    # FluidAudio actor — fragile, see CLAUDE.md
@@ -43,7 +45,8 @@ ShhhcribbleiOS/
 │   ├── ShhhcribbleActivityManager  # Live Activity start/update/end
 │   └── NotesRepository         # SwiftData ModelContainer wrapper
 └── Extensions/
-    ├── String+Filters.swift           # filler-word removal
+    ├── String+Filters.swift           # filler-word removal (built-in + custom)
+    ├── String+Substitutions.swift     # find/replace pass + auto-cased hotwords
     └── String+TitleGeneration.swift
 
 ShhhcribbleShared/         # Framework — StartRecordingIntent, StopRecordingIntent,

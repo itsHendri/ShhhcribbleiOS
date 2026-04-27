@@ -63,6 +63,7 @@ actor TranscriptionService {
     private var loadTask: Task<Void, Error>?
     private var recording = false
     private var stopRequested = false
+    private var cancelled = false
     private var reloading = false
 
     private var feedTask: Task<Void, Never>?
@@ -218,17 +219,49 @@ actor TranscriptionService {
         resumeFinish(text)
     }
 
+    /// Real abort — drop audio, skip transcription, skip SwiftData write,
+    /// restore clipboard immediately. Invoked by the in-app Cancel button.
+    func cancelRecording() async {
+        diagLog.notice("TranscriptionService.cancelRecording ENTRY, recording=\(self.recording, privacy: .public)")
+        guard recording, !stopRequested else {
+            await TranscriptionStatus.shared.event("Cancel: already stopping or not recording")
+            return
+        }
+        cancelled = true
+        stopRequested = true
+        await TranscriptionStatus.shared.event("Cancel")
+
+        recorder?.stop()
+        streamContinuation?.finish()
+        tdtLiveTask?.cancel()
+        feedTask?.cancel()
+
+        tdtBuffers.removeAll(keepingCapacity: false)
+        lastPartial = ""
+
+        // Resume the awaiter in recordAndTranscribe with empty text — the
+        // `cancelled` flag is checked there to skip commit + SwiftData write.
+        resumeFinish("")
+    }
+
     private var bgTaskId: UIBackgroundTaskIdentifier = .invalid
 
     func recordAndTranscribe(trigger: TriggerSource = .manual) async throws {
         guard !recording else { return }
         recording = true
         stopRequested = false
+        cancelled = false
         lastPartial = ""
         tdtBuffers.removeAll(keepingCapacity: true)
         tdtLastLiveAt = nil
         recordingStartedAt = Date()
         currentTrigger = trigger
+
+        // No clipboard snapshot/restore in the in-app flow — the user's
+        // clipboard gets replaced by the transcript and stays there. Restore
+        // is reserved for the Sprint 5 keyboard-extension autopaste path,
+        // where the keyboard injects text and then needs to put the original
+        // clipboard back. ClipboardService.swift exists for that.
 
         // Clear any leftover partial snippet from a prior recording so the
         // RecordingView's typewriter starts from a clean slate. Without this
@@ -376,6 +409,14 @@ actor TranscriptionService {
         if let m = streamingManager { await m.reset() }
 
         await TranscriptionStatus.shared.event("Got: \"\(transcript)\"")
+
+        if cancelled {
+            await TranscriptionStatus.shared.event("Cancelled — discarding transcript")
+            await MainActor.run {
+                TranscriptionStatus.shared.partialSnippet = ""
+            }
+            return
+        }
 
         let filterOn = UserDefaults.standard.object(forKey: "filterFillerWords") as? Bool ?? true
         let filtered = filterOn ? FillerWordFilter.filter(transcript) : transcript

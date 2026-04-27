@@ -90,9 +90,7 @@ struct RecordingOverlayView: View {
     }
 
     private func cancel() {
-        // For now, Cancel does the same thing as Stop. Sprint 2 will introduce
-        // a real abort path that drops the audio and skips the SwiftData write.
-        Task { await TranscriptionService.shared.stopRecording() }
+        Task { await TranscriptionService.shared.cancelRecording() }
     }
 }
 

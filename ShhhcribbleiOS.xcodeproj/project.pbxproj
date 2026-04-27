@@ -29,10 +29,13 @@
 		8DB2514900940BDCD6CD53C8 /* ShhhcribbleLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2015BF4BDACAAEAB1ADBEDA0 /* ShhhcribbleLiveActivity.swift */; };
 		93CF5A5E042AF5427B02C654 /* AudioInterruptionObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 553D8890C795CDE235977EFD /* AudioInterruptionObserver.swift */; };
 		AE47FFD5C0433E6E197097D1 /* ShhhcribbleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A660C5D593C571BE20F2F69E /* ShhhcribbleApp.swift */; };
+		B2DC6A9E4BB42904174465C6 /* NoteDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 226236F0C41379F9E638673C /* NoteDetailView.swift */; };
 		B6B8018E3F1EBEF46442FB99 /* ShhhcribbleWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6F03C07BF30107CC41CC0D9 /* ShhhcribbleWidgetBundle.swift */; };
 		C680884E02E47E863C450850 /* ShhhcribbleWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 07913D96A6F38303729C43F7 /* ShhhcribbleWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		CA8574DCFEFEB1A394A670D6 /* ClipboardService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25A18BFDC26CD1F473E1DBD8 /* ClipboardService.swift */; };
 		CAF1BF9ED9D4C2A49B90975A /* AudioRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687417872E4192504E8FED30 /* AudioRecorder.swift */; };
 		D2896EEE392BDFAC6D883C61 /* RecordControlWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46298A8DEB58641B112F4AF6 /* RecordControlWidget.swift */; };
+		EF43D28C29F6BA8CBE6F8977 /* NoteDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33E79AE43F43AB9D65224F4F /* NoteDetailViewModel.swift */; };
 		EF9177A7A384C62B39C1EC48 /* ShhhcribbleActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = F647A6F2EE2757605B66066F /* ShhhcribbleActivityAttributes.swift */; };
 		FC825DC4939F22412C816BCD /* String+TitleGeneration.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF1C9A70FCBEE2639F513380 /* String+TitleGeneration.swift */; };
 /* End PBXBuildFile section */
@@ -91,6 +94,9 @@
 		07913D96A6F38303729C43F7 /* ShhhcribbleWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShhhcribbleWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		1DD50CC8335662AB2606C4D2 /* ShhhcribbleActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShhhcribbleActivityManager.swift; sourceTree = "<group>"; };
 		2015BF4BDACAAEAB1ADBEDA0 /* ShhhcribbleLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShhhcribbleLiveActivity.swift; sourceTree = "<group>"; };
+		226236F0C41379F9E638673C /* NoteDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteDetailView.swift; sourceTree = "<group>"; };
+		25A18BFDC26CD1F473E1DBD8 /* ClipboardService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardService.swift; sourceTree = "<group>"; };
+		33E79AE43F43AB9D65224F4F /* NoteDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteDetailViewModel.swift; sourceTree = "<group>"; };
 		3641C5BDC999F0CE55ED22CB /* TranscriptionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionService.swift; sourceTree = "<group>"; };
 		46298A8DEB58641B112F4AF6 /* RecordControlWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordControlWidget.swift; sourceTree = "<group>"; };
 		4DC7CD9084CEFD0BC71D09EF /* String+Filters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Filters.swift"; sourceTree = "<group>"; };
@@ -137,6 +143,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		209499DF14E202ACA80479F1 /* NoteDetail */ = {
+			isa = PBXGroup;
+			children = (
+				226236F0C41379F9E638673C /* NoteDetailView.swift */,
+				33E79AE43F43AB9D65224F4F /* NoteDetailViewModel.swift */,
+			);
+			path = NoteDetail;
+			sourceTree = "<group>";
+		};
 		3AC1AE92F36A0DA1106BB82E /* App */ = {
 			isa = PBXGroup;
 			children = (
@@ -188,6 +203,7 @@
 		88A72DA31A313C6B4FEC076C /* Features */ = {
 			isa = PBXGroup;
 			children = (
+				209499DF14E202ACA80479F1 /* NoteDetail */,
 				FC64FA46EEB1D6DF21623F5B /* NotesList */,
 				A821E3E2B902F0DD9E71D4CD /* Recording */,
 				536D0143C85BE4CD239444B5 /* Settings */,
@@ -241,6 +257,7 @@
 				553D8890C795CDE235977EFD /* AudioInterruptionObserver.swift */,
 				687417872E4192504E8FED30 /* AudioRecorder.swift */,
 				8251392958D48F0A74CFEA33 /* AudioSessionManager.swift */,
+				25A18BFDC26CD1F473E1DBD8 /* ClipboardService.swift */,
 				656869E266D1C8CCF0A5B31B /* NotesRepository.swift */,
 				1DD50CC8335662AB2606C4D2 /* ShhhcribbleActivityManager.swift */,
 				3641C5BDC999F0CE55ED22CB /* TranscriptionService.swift */,
@@ -425,8 +442,11 @@
 				93CF5A5E042AF5427B02C654 /* AudioInterruptionObserver.swift in Sources */,
 				CAF1BF9ED9D4C2A49B90975A /* AudioRecorder.swift in Sources */,
 				5901C59704D171D0F5014BAF /* AudioSessionManager.swift in Sources */,
+				CA8574DCFEFEB1A394A670D6 /* ClipboardService.swift in Sources */,
 				0642854955935156E76FEFEC /* ContentView.swift in Sources */,
 				1BDCAA44C32853FE8EBA56E9 /* Note.swift in Sources */,
+				B2DC6A9E4BB42904174465C6 /* NoteDetailView.swift in Sources */,
+				EF43D28C29F6BA8CBE6F8977 /* NoteDetailViewModel.swift in Sources */,
 				32EF336E4F1238643CD62402 /* NotesListView.swift in Sources */,
 				1CF7B95C1AF267E26C793831 /* NotesRepository.swift in Sources */,
 				5C09F93FEB042D216EA310B5 /* RecordingView.swift in Sources */,

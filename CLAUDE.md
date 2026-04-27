@@ -319,37 +319,58 @@ The keyboard extension (`ShhhcribbleKeyboard`) injects transcribed text directly
 ## Build sequence
 
 **Sprint 1 — Foundation**
-1. Re-sign all targets under your Apple Developer team
-2. Set up App Group `group.com.shhhcribble` on all targets
-3. Audit existing Swift files — refactor into feature folder structure above
-4. Replace any UserDefaults note persistence with SwiftData `Note` model
-5. Add `ControlCenterWidget` target (iOS 18 `ControlWidget`)
+1. ✅ Re-sign all targets under your Apple Developer team (Personal Team `L9T3PX7HVH` pinned in `project.yml`)
+2. ⏸ Set up App Group `group.com.shhhcribble` on all targets — **deferred to Sprint 5**, hard-blocked on paid Developer Program (Personal Team can't include `application-groups` entitlement). Until then, App Group entries are stripped from `*.entitlements` and `LiveActivityIntent` uses `openAppWhenRun: true` as a workaround.
+3. ✅ Audit existing Swift files — refactor into feature folder structure above
+4. ✅ Replace any UserDefaults note persistence with SwiftData `Note` model
+5. ✅ Add Control Center widget — lives as `RecordControlWidget.swift` inside `ShhhcribbleWidget/` rather than a separate target
 
 **Sprint 2 — Capture flow**
-6. `RecordingView` + `RecordingViewModel` — waveform, timer, Stop + Cancel
-7. `ClipboardService` — snapshot/write/restore
-8. Auto-save on Stop + `.saved` confirmation toast (no Review screen — edits land in `NoteDetailView`)
-9. `TranscriptionService` — FluidAudio actor, VP-free audio session
-10. Share Sheet from `NoteDetailView`
+6. ✅ `RecordingView` — waveform, timer, Stop + Cancel. (`RecordingViewModel` split intentionally skipped — see "Architecture stance" below; logic lives view-local with `@State` + `TranscriptionStatus` for shared observable state.)
+7. ✅ `ClipboardService` — actor with snapshot/write/restore, parked for Sprint 5 keyboard autopaste only. **NOT used by the in-app flow** — see [feedback memory](file:.claude/projects/-Users-hendri-ShhhcribbleiOS/memory/feedback_clipboard_restore_scope.md).
+8. ✅ Auto-save on Stop + `.saved` confirmation toast (no Review screen — edits land in `NoteDetailView`)
+9. ✅ `TranscriptionService` — FluidAudio actor, VP-free audio session. `cancelRecording()` is a real abort (drops audio, skips SwiftData write).
+10. ✅ Share Sheet from `NoteDetailView` (`ShareLink`)
 
 **Sprint 3 — Notes layer**
-11. SwiftData `Note` model + `ModelContainer` setup
-12. `NotesListView` — search, tag filter chips, swipe actions
-13. `NoteDetailView` — full note, edit, share
+11. ✅ SwiftData `Note` model + `ModelContainer` setup
+12. ✅ `NotesListView` — search bar (substring on transcript+title), tag filter chips (multi-select **AND**), swipe-to-delete, "Clear All", "Clear filters"
+13. ✅ `NoteDetailView` — full note, inline title + transcript edit, ShareLink, delete-with-confirm, tag editor with autocomplete (sources from all-notes `@Query`)
 
-**Sprint 4 — Settings + polish**
+**Sprint 4 — Settings + polish** (open)
 14. `SettingsView` — filler words, custom vocabulary, substitution rules
 15. `OnboardingView` — 3 screens + deep link to Control Center settings
-16. Audio interruption handling (phone call, AirPods disconnect)
+16. ✅ Audio interruption handling (phone call) — already wired via `AudioInterruptionObserver`. AirPods disconnect handled via `AVAudioEngineConfigurationChange` observer in `AudioRecorder` (rebuilds engine, preserves captured samples).
 17. Error states (mic permission denied, model not loaded, no speech)
 18. Visual polish — typography, waveform animation, dark mode
 
 **Sprint 5 — Keyboard extension (Phase 2)**
-19. `ShhhcribbleKeyboard` target + `UIInputViewController`
-20. App Group microphone handoff flow
-21. `UITextDocumentProxy` text injection
-22. Cancel button in keyboard UI
-23. Onboarding update for keyboard setup (Settings → General → Keyboards)
+19. **PREREQ — Restore App Group + paid Developer Program signing.**
+    - Enrol in paid Apple Developer Program; pin paid team ID in `project.yml`.
+    - Restore `application-groups` entry to `ShhhcribbleiOS.entitlements` and `ShhhcribbleWidget.entitlements`; add new `ShhhcribbleKeyboard.entitlements` with the same group.
+    - Flip `openAppWhenRun: true` → `false` on `StopRecordingIntent` and `CancelRecordingIntent`.
+    - Drop the `.widgetURL(shhhcribble://open)` lock-screen workaround — per-button intents take over again.
+    - Verify install on device end-to-end before adding any keyboard code (see Working notes — App Group + Personal Team).
+20. `ShhhcribbleKeyboard` target + `UIInputViewController`
+21. App Group microphone handoff flow (main app records, writes transcript to shared container; keyboard reads from container)
+22. `UITextDocumentProxy` text injection — at this point ClipboardService snapshot/restore wraps the autopaste so the user's prior clipboard survives
+23. Cancel button in keyboard UI
+24. Onboarding update for keyboard setup (Settings → General → Keyboards)
+
+---
+
+## Architecture stance — modern SwiftUI (decided April 2026)
+
+The original directory map showed a `XxxViewModel.swift` per feature. That pattern came from UIKit/early-SwiftUI and is no longer how Apple itself builds SwiftUI apps. The actual pattern in this codebase is:
+
+- **Domain logic in services / actors** — `TranscriptionService`, `AudioRecorder`, `ClipboardService`, `AudioSessionManager`, `NotesRepository`. These are the units worth unit-testing.
+- **Shared observable state in `@Observable` model objects** — `TranscriptionStatus` is the canonical example. It's effectively the app-wide VM for recording state.
+- **View-local state in `@State`** — timer, search text, selected tags, focus, animation history. Don't lift these into a VM.
+- **A separate `XxxViewModel.swift` is added only when**: (a) the view has non-trivial local logic worth testing in isolation, or (b) the same logic is shared across multiple views. Default is no VM.
+
+`NoteDetailViewModel.swift` exists but is thin — most of the editing flow runs through `@Bindable note` + `@Environment(\.modelContext)`. It's kept around but isn't a template to follow.
+
+If a future change is tempted to introduce a VM "for consistency" — don't. Add one only when you can name the unit test you'd write against it.
 
 ---
 
@@ -479,6 +500,31 @@ if phase == .background && status.isRecording && status.launchedViaURL {
 
 So URL-scheme triggers (Back Tap → Shortcut → app launch) still get the "tap iOS Back pill = commit" behaviour, but in-app starts continue across app switches.
 
+### AudioRecorder — per-callback buffer copy + route-change rebuild
+
+`AudioRecorder.installTap` uses `bufferSize: 0` (let `AVAudioEngine` pick the natural delivery size — variable on AirPods). The tap closure allocates a **fresh** `AVAudioPCMBuffer` sized to `buffer.frameLength` and `memcpy`s frames in before yielding via `onBuffer`. Hardcoded buffer sizes (the original `2560`) silently truncate trailing audio on AirPods because the tap reuses backing storage and Bluetooth delivers variable-size stereo buffers — pre-sized taps clip the last frames of an utterance.
+
+The `engine` property is a `var`, not a `let`: an `AVAudioEngineConfigurationChange` notification observer rebuilds it from scratch on route change (AirPods disconnect, Continuity Mic swap). Per CLAUDE.md AirPods rules, "rebuild, don't patch" — surgically updating the existing engine deadlocks. Already-captured samples are preserved naturally because TDT accumulates in `tdtBuffers` and streaming has already fed buffers to the FluidAudio manager. Logs surface under `os.Logger(subsystem: "com.shhhcribble.diag", category: "audio")`.
+
+### ClipboardService is keyboard-extension only
+
+`Services/ClipboardService.swift` exists but is **not wired into the in-app recording flow**. The in-app flow writes transcripts directly to `UIPasteboard.general.string` on the main thread (in `commit`, `handlePartial`, `tdtLiveTranscribe`) and leaves the clipboard alone afterwards — the user wants the transcript to stick.
+
+Two reasons not to revert this:
+1. The user explicitly didn't want the prior clipboard restored after a normal recording.
+2. Routing live-partial writes through the actor added enough latency that backgrounded paste targets only ever saw early words. Direct main-thread writes match the original behaviour.
+
+Snapshot / `scheduleRestore` / `restoreImmediately` are reserved for the Sprint 5 keyboard-extension autopaste path, where the keyboard injects via `UITextDocumentProxy.insertText` and then needs to put the user's prior clipboard back. Don't re-introduce those calls inside `TranscriptionService`.
+
+### Cancel is a real abort
+
+`TranscriptionService.cancelRecording()` is distinct from `stopRecording()`. Cancel:
+- sets the `cancelled` flag, stops the recorder + cancels feed/live tasks
+- drops `tdtBuffers`, clears `lastPartial`
+- resumes the awaiter with empty text
+
+The post-finish path in `recordAndTranscribe` checks `cancelled` and returns early, **before** `commit` — so no SwiftData write, no toast, no clipboard touch. The Cancel button in `RecordingView` calls `cancelRecording`. The Stop button still calls `stopRecording` (which finalises transcription and saves).
+
 ---
 
-*Last updated: April 2026 — based on planning sessions and Mac version lessons (itsHendri/Shhhcribble v1.3.0)*
+*Last updated: April 2026 — based on planning sessions and Mac version lessons (itsHendri/Shhhcribble v1.3.0). Sprint 2/3 and tag UI shipped April 2026.*

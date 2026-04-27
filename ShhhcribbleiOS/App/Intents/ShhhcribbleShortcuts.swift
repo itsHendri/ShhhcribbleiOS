@@ -1,7 +1,5 @@
 import AppIntents
-import ShhhcribbleShared
 
-@available(iOS 18.0, *)
 struct ShhhcribbleShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(

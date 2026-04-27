@@ -9,36 +9,53 @@ private let diagLog = Logger(subsystem: "com.shhhcribble.diag", category: "app")
 struct ShhhcribbleApp: App {
     @StateObject private var status = TranscriptionStatus.shared
     @Environment(\.scenePhase) private var scenePhase
+    @AppStorage("onboardingComplete") private var onboardingComplete: Bool = false
 
     init() {
         AudioSessionManager.shared.configure()
         AudioInterruptionObserver.shared.start()
-        diagLog.notice("ShhhcribbleApp.init wiring performers")
         StopRecordingIntent.performer = {
-            diagLog.notice("StopRecordingIntent performer FIRING")
             await TranscriptionService.shared.stopRecording()
-            diagLog.notice("StopRecordingIntent performer COMPLETED")
         }
         CancelRecordingIntent.performer = {
-            // Until Sprint 2 wires a real abort path (drop audio, skip
-            // SwiftData write, restore clipboard), Cancel from the Live
-            // Activity behaves identically to Stop.
+            // Cancel from the Live Activity currently behaves identically
+            // to Stop (commits the recording). Real abort lives in the
+            // in-app Cancel button via TranscriptionService.cancelRecording.
             await TranscriptionService.shared.stopRecording()
         }
-        StartRecordingIntent.performer = {
+        StartRecordingIntent.performer = { @MainActor in
             let service = TranscriptionService.shared
-            if await service.isRecording {
-                await service.stopRecording()
-            } else {
-                // Trigger source attribution is best-effort — a single intent
-                // can't tell whether it was fired from Control Center, Siri,
-                // Shortcuts, or AppShortcuts. Refine with per-source intents
-                // in a later sprint if attribution becomes important.
-                try? await service.recordAndTranscribe(trigger: .manual)
+            let status = TranscriptionStatus.shared
+            if status.isRecording {
+                Task.detached { await service.stopRecording() }
+                return
+            }
+            // Flip the overlay synchronously so it covers the launch flash
+            // before the actor hop inside recordAndTranscribe can run. Same
+            // pattern as the URL-scheme handler in `handle(url:)`.
+            status.setPhase(.recording)
+            // Fire-and-forget: awaiting recordAndTranscribe here would keep
+            // Siri's "Working…" panel up for the whole recording, which
+            // absorbs touches and makes Stop / Cancel inert.
+            Task.detached(priority: .userInitiated) {
+                do {
+                    try await service.recordAndTranscribe(trigger: .manual)
+                } catch {
+                    let msg = String(describing: error)
+                    diagLog.error("recordAndTranscribe threw \(msg, privacy: .public)")
+                    await MainActor.run {
+                        status.setPhase(.error(.other(msg)))
+                    }
+                }
             }
         }
         Task.detached(priority: .userInitiated) {
             try? await TranscriptionService.shared.ensureModelLoaded()
+        }
+        // Sweep up any Live Activities that survived a prior crash or kill —
+        // without this they accumulate as ghost banners across launches.
+        Task { @MainActor in
+            ShhhcribbleActivityManager.shared.reapOrphanedActivities()
         }
     }
 
@@ -48,6 +65,12 @@ struct ShhhcribbleApp: App {
                 .overlay { RecordingOverlayView(status: status) }
                 .animation(.spring(response: 0.42, dampingFraction: 0.78), value: status.overlayVisible)
                 .onOpenURL { url in handle(url: url) }
+                .fullScreenCover(isPresented: Binding(
+                    get: { !onboardingComplete },
+                    set: { _ in /* dismissal happens via the onboarding "Get Started" / Skip buttons flipping the flag */ }
+                )) {
+                    OnboardingView()
+                }
                 .onChange(of: scenePhase) { _, phase in
                     // Only auto-stop on backgrounding when the recording was
                     // launched via URL scheme (e.g. Back Tap → Shortcut → app

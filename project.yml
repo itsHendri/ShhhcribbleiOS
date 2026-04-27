@@ -109,9 +109,16 @@ targets:
       - path: ShhhcribbleWidget
         excludes:
           - ShhhcribbleWidget.entitlements
-          - Assets.xcassets
-    resources:
-      - ShhhcribbleWidget/Assets.xcassets
+      # Multi-target source membership: the widget needs StartRecordingIntent
+      # for its Control Center button, and Stop/Cancel intents for the Live
+      # Activity card. Apple's recommended pattern (since iOS 18) is to share
+      # the intent .swift files between targets directly rather than via a
+      # framework — AppShortcutsProvider in the main app only registers with
+      # iOS when the referenced intents live in the main app target. Adding
+      # them here too means each target compiles its own copy.
+      - path: ShhhcribbleiOS/App/Intents/StartRecordingIntent.swift
+      - path: ShhhcribbleiOS/App/Intents/StopRecordingIntent.swift
+      - path: ShhhcribbleiOS/App/Intents/CancelRecordingIntent.swift
     info:
       path: ShhhcribbleWidget/Info.plist
       properties:

@@ -22,6 +22,21 @@ final class ShhhcribbleActivityManager {
 
     var isRunning: Bool { activity != nil }
 
+    /// End any pre-existing activities. Called at app launch to clean up
+    /// orphans left behind when the app was killed mid-recording — iOS keeps
+    /// the banner displayed even after the process dies, and our in-memory
+    /// `activity` reference is gone, so without this they stack across
+    /// relaunches.
+    func reapOrphanedActivities() {
+        let orphans = Activity<ShhhcribbleActivityAttributes>.activities
+        guard !orphans.isEmpty else { return }
+        for orphan in orphans {
+            Task {
+                await orphan.end(nil, dismissalPolicy: .immediate)
+            }
+        }
+    }
+
     @discardableResult
     func start() -> Bool {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else {
@@ -29,6 +44,9 @@ final class ShhhcribbleActivityManager {
             return false
         }
         if activity != nil { return true }
+        // Reap any orphans defensively so a crash mid-recording can't leave
+        // two banners side-by-side after the next start.
+        reapOrphanedActivities()
         startedAt = Date()
         let attrs = ShhhcribbleActivityAttributes(startedAt: startedAt)
         let state = ShhhcribbleActivityAttributes.ContentState(

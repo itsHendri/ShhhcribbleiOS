@@ -209,13 +209,12 @@ actor TranscriptionService {
     }
 
     func stopRecording() async {
-        diagLog.notice("TranscriptionService.stopRecording ENTRY, recording=\(self.recording, privacy: .public) stopRequested=\(self.stopRequested, privacy: .public)")
         guard recording, !stopRequested else {
-            diagLog.notice("TranscriptionService.stopRecording GUARD HIT — bailing")
             await TranscriptionStatus.shared.event("Stop: already stopping or not recording")
             return
         }
         stopRequested = true
+        AudioInterruptionObserver.shared.recordingDidStop()
         await TranscriptionStatus.shared.event("Manual stop")
 
         recorder?.stop()
@@ -258,13 +257,13 @@ actor TranscriptionService {
     /// Real abort — drop audio, skip transcription, skip SwiftData write,
     /// restore clipboard immediately. Invoked by the in-app Cancel button.
     func cancelRecording() async {
-        diagLog.notice("TranscriptionService.cancelRecording ENTRY, recording=\(self.recording, privacy: .public)")
         guard recording, !stopRequested else {
             await TranscriptionStatus.shared.event("Cancel: already stopping or not recording")
             return
         }
         cancelled = true
         stopRequested = true
+        AudioInterruptionObserver.shared.recordingDidStop()
         await TranscriptionStatus.shared.event("Cancel")
 
         recorder?.stop()
@@ -312,6 +311,7 @@ actor TranscriptionService {
         tdtLastLiveAt = nil
         recordingStartedAt = Date()
         currentTrigger = trigger
+        AudioInterruptionObserver.shared.recordingDidStart()
 
         // No clipboard snapshot/restore in the in-app flow — the user's
         // clipboard gets replaced by the transcript and stays there. Restore
@@ -361,9 +361,8 @@ actor TranscriptionService {
                     UIApplication.shared.endBackgroundTask(endId)
                 }
             }
-            Task.detached {
-                try? await Task.sleep(nanoseconds: 3_000_000_000)
-                await MainActor.run { ShhhcribbleActivityManager.shared.end() }
+            Task { @MainActor in
+                ShhhcribbleActivityManager.shared.end()
             }
         }
 

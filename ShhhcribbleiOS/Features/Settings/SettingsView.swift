@@ -6,6 +6,8 @@ struct SettingsView: View {
     @AppStorage("filterFillerWords") private var filterFillerWords = true
     @AppStorage("useANE") private var useANE = true
     @AppStorage("asrMode") private var asrModeRaw = AsrMode.streaming.rawValue
+    // TODO: remove after onboarding QA — see plan silly-karp
+    @AppStorage("onboardingComplete") private var onboardingComplete: Bool = false
     @ObservedObject private var status = TranscriptionStatus.shared
 
     @State private var micPermission: AVAudioApplication.recordPermission = .undetermined
@@ -33,6 +35,7 @@ struct SettingsView: View {
                     performanceSection
                     permissionsSection
                     aboutSection
+                    debugSection // TODO: remove after onboarding QA — see plan silly-karp
                 }
                 .scrollContentBackground(.hidden)
             }
@@ -188,6 +191,26 @@ struct SettingsView: View {
             .padding(.vertical, 4)
         } header: {
             Text("About")
+        }
+    }
+
+    // TODO: remove after onboarding QA — see plan silly-karp
+    private var debugSection: some View {
+        Section {
+            Button {
+                onboardingComplete = false
+            } label: {
+                HStack {
+                    Text("Replay onboarding")
+                    Spacer()
+                    Image(systemName: "arrow.counterclockwise")
+                        .foregroundStyle(.secondary)
+                }
+            }
+        } header: {
+            Text("Debug")
+        } footer: {
+            Text("Temporary — re-shows the onboarding flow on next return to this view's parent. Remove before TestFlight.")
         }
     }
 

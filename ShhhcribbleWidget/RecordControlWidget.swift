@@ -9,11 +9,7 @@ struct RecordControlWidget: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: Self.kind) {
             ControlWidgetButton(action: StartRecordingIntent()) {
-                Label {
-                    Text("Record")
-                } icon: {
-                    Image("RecordIcon")
-                }
+                Label("Record", systemImage: "waveform")
             }
         }
         .displayName("Shhhcribble")

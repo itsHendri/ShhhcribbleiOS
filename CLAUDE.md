@@ -500,6 +500,34 @@ if phase == .background && status.isRecording && status.launchedViaURL {
 
 So URL-scheme triggers (Back Tap → Shortcut → app launch) still get the "tap iOS Back pill = commit" behaviour, but in-app starts continue across app switches.
 
+### App Intents must live in the main app — multi-target source membership for the widget
+
+`StartRecordingIntent`, `StopRecordingIntent`, `CancelRecordingIntent`, and `ShhhcribbleShortcuts` (the `AppShortcutsProvider`) all live in `ShhhcribbleiOS/App/Intents/` — **not** in `ShhhcribbleShared`. The four intent files are added to BOTH the `ShhhcribbleiOS` and `ShhhcribbleWidget` targets via [project.yml](project.yml) `sources:` entries, so each target compiles its own copy.
+
+This is the only Apple-supported pattern for sharing intents between an app and an extension. Per Apple DTS ([forum thread](https://developer.apple.com/forums/thread/759160)): the `AppShortcutsProvider` and the intents it references must live in the main app target. If they live in a framework, the build emits `Metadata.appintents` inside the framework with empty `effectiveBundleIdentifiers`, iOS never registers the App Shortcut, the entry doesn't appear in the Shortcuts app, Back Tap, or Siri's matchable phrase list, and Siri falls through to its built-in app launcher (so "Start Shhhcribble" silently behaves like "Open Shhhcribble").
+
+If you ever consider moving these back into `ShhhcribbleShared`: don't. We tried it. The metadata bundle generated for the framework with the AppShortcutsProvider inside still didn't register, even after using `AppIntentsPackage`. Multi-target source membership is the path.
+
+`ShhhcribbleActivityAttributes` stays in `ShhhcribbleShared` — it's not an intent, just a shared model type for the Live Activity, and frameworks are fine for those.
+
+### AppIntent perform() must NOT await long-running work
+
+When Siri triggers `StartRecordingIntent`, Siri displays a "Working…" panel that absorbs touches in the launched app until `perform()` returns. If `perform()` (or anything it awaits) blocks for the full recording, Stop and Cancel buttons are inert and the mic feels dead because Siri still owns the foreground modal.
+
+The pattern: `perform()` calls `await Self.performer?()`, but the performer body **dispatches a `Task.detached`** for the actual recording and returns immediately. See [ShhhcribbleApp.swift](ShhhcribbleiOS/App/ShhhcribbleApp.swift) `StartRecordingIntent.performer = { @MainActor in ... }`.
+
+The performer also flips `TranscriptionStatus.shared.phase = .recording` synchronously on `MainActor` before dispatching, so the overlay covers the launch flash before the actor hop.
+
+### AudioInterruptionObserver — Siri handoff grace window
+
+Siri's audio session is briefly active when our intent fires, and a transient `.began` interruption can arrive right after our session activates as the contexts swap. Without filtering, that killed Siri-launched recordings after ~1 s.
+
+[AudioInterruptionObserver.swift](ShhhcribbleiOS/Services/AudioInterruptionObserver.swift) records `recordingStartedAt` (set/cleared from `TranscriptionService.recordAndTranscribe` and `stopRecording`/`cancelRecording`) and ignores `.began` interruptions that arrive within 1.5 s of that timestamp. Real interruptions (phone calls, alarms) always arrive well outside that window.
+
+### AudioSessionManager — release prior owner before claiming
+
+[AudioSessionManager.configure()](ShhhcribbleiOS/Services/AudioSessionManager.swift) calls `setActive(false, .notifyOthersOnDeactivation)` before `setCategory`, and `activate()` retries once after 300 ms if the first `setActive(true)` throws. This is defensive cover for the Siri-launched path: Siri's session can still be active during its dismissal animation, and a single un-retried activate sometimes fails silently — the engine starts but captures no audio.
+
 ### AudioRecorder — per-callback buffer copy + route-change rebuild
 
 `AudioRecorder.installTap` uses `bufferSize: 0` (let `AVAudioEngine` pick the natural delivery size — variable on AirPods). The tap closure allocates a **fresh** `AVAudioPCMBuffer` sized to `buffer.frameLength` and `memcpy`s frames in before yielding via `onBuffer`. Hardcoded buffer sizes (the original `2560`) silently truncate trailing audio on AirPods because the tap reuses backing storage and Bluetooth delivers variable-size stereo buffers — pre-sized taps clip the last frames of an utterance.

@@ -100,6 +100,11 @@ final class TranscriptionStatus: ObservableObject {
     /// the play-button progress ring; users only ever see this on a fresh
     /// install or the first time they switch to a not-yet-downloaded engine.
     @Published var modelDownloadProgress: Double?
+    /// Non-nil while a recording is running in append-to-note mode. The
+    /// recording overlay reads this to render an "Adding to: <title>" chip
+    /// so the user knows the transcript will be appended rather than create
+    /// a fresh note. Cleared on every terminal state.
+    @Published var appendTargetTitle: String?
 
     /// Single source of truth derives from `phase`. Existing call sites that
     /// only need to know "is the engine actively capturing audio" keep
@@ -143,6 +148,10 @@ actor TranscriptionService {
     private var tdtLastLiveAt: Date?
     private var recordingStartedAt: Date?
     private var currentTrigger: TriggerSource = .manual
+    /// When non-nil, `commit` appends the transcript to the existing note with
+    /// this id instead of inserting a new one. Set at the start of
+    /// `recordAndTranscribe` and cleared on every exit path.
+    private var appendTargetId: UUID?
     private static let tdtLiveInterval: TimeInterval = 0.7
     private var streamContinuation: AsyncStream<AVAudioPCMBuffer>.Continuation?
     private var lastPartial = ""
@@ -335,7 +344,10 @@ actor TranscriptionService {
 
     private var bgTaskId: UIBackgroundTaskIdentifier = .invalid
 
-    func recordAndTranscribe(trigger: TriggerSource = .manual) async throws {
+    func recordAndTranscribe(
+        trigger: TriggerSource = .manual,
+        appendingTo: UUID? = nil
+    ) async throws {
         guard !recording else { return }
 
         // Pre-flight mic permission so we don't fail silently inside the
@@ -365,6 +377,17 @@ actor TranscriptionService {
         tdtLastLiveAt = nil
         recordingStartedAt = Date()
         currentTrigger = trigger
+        appendTargetId = appendingTo
+        if let id = appendingTo {
+            let title = await NotesRepository.shared.title(for: id)
+            await MainActor.run {
+                TranscriptionStatus.shared.appendTargetTitle = title
+            }
+        } else {
+            await MainActor.run {
+                TranscriptionStatus.shared.appendTargetTitle = nil
+            }
+        }
         AudioInterruptionObserver.shared.recordingDidStart()
 
         // No clipboard snapshot/restore in the in-app flow — the user's
@@ -402,6 +425,7 @@ actor TranscriptionService {
             recording = false
             stopRequested = false
             tdtBuffers.removeAll()
+            appendTargetId = nil
             let endId = self.bgTaskId
             self.bgTaskId = .invalid
             Task { @MainActor in
@@ -411,6 +435,7 @@ actor TranscriptionService {
                 if TranscriptionStatus.shared.phase == .recording {
                     TranscriptionStatus.shared.setPhase(.idle)
                 }
+                TranscriptionStatus.shared.appendTargetTitle = nil
                 if endId != .invalid {
                     UIApplication.shared.endBackgroundTask(endId)
                 }
@@ -549,8 +574,9 @@ actor TranscriptionService {
 
         let duration = recordingStartedAt.map { Date().timeIntervalSince($0) } ?? 0
         let trigger = currentTrigger
-        await commit(filtered, duration: duration, trigger: trigger)
-        await TranscriptionStatus.shared.event("Copied to clipboard")
+        let target = appendTargetId
+        await commit(filtered, duration: duration, trigger: trigger, appendingTo: target)
+        await TranscriptionStatus.shared.event(target == nil ? "Copied to clipboard" : "Added to note")
         await maybeAutoBackground()
     }
 
@@ -653,15 +679,25 @@ actor TranscriptionService {
     }
 
     @MainActor
-    private func commit(_ text: String, duration: TimeInterval, trigger: TriggerSource) {
+    private func commit(
+        _ text: String,
+        duration: TimeInterval,
+        trigger: TriggerSource,
+        appendingTo: UUID?
+    ) {
         UIPasteboard.general.string = text
-        NotesRepository.shared.insert(
-            transcript: text,
-            duration: duration,
-            trigger: trigger
-        )
-        // Toast handles the success haptic so we don't double up.
-        ToastManager.shared.show("Copied to clipboard", systemImage: "doc.on.doc.fill")
+        if let id = appendingTo {
+            NotesRepository.shared.append(transcript: text, to: id)
+            ToastManager.shared.show("Added to note", systemImage: "text.append")
+        } else {
+            NotesRepository.shared.insert(
+                transcript: text,
+                duration: duration,
+                trigger: trigger
+            )
+            // Toast handles the success haptic so we don't double up.
+            ToastManager.shared.show("Copied to clipboard", systemImage: "doc.on.doc.fill")
+        }
     }
 
     @MainActor

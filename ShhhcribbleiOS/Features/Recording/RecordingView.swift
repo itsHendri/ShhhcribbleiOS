@@ -35,10 +35,16 @@ struct RecordingOverlayView: View {
 
     private var recordingContent: some View {
         VStack(spacing: 20) {
+            if let title = status.appendTargetTitle {
+                AppendingToChip(title: title)
+                    .padding(.horizontal, 24)
+                    .padding(.top, 24)
+            }
+
             Text(timeString)
                 .font(.system(size: 17, weight: .semibold, design: .monospaced))
                 .foregroundStyle(.secondary)
-                .padding(.top, 24)
+                .padding(.top, status.appendTargetTitle == nil ? 24 : 0)
 
             SoundwaveBars(audioLevel: status.audioLevel)
                 .frame(width: 200, height: 72)
@@ -103,6 +109,36 @@ struct RecordingOverlayView: View {
 
     private func cancel() {
         Task { await TranscriptionService.shared.cancelRecording() }
+    }
+}
+
+// MARK: - Appending-to chip
+//
+// Display-only context indicator shown at the top of the recording overlay
+// when the recording was launched from NoteDetailView's "Continue recording"
+// button. Reassures the user the transcript will be appended rather than
+// create a fresh note. Tappable-to-abandon was deliberately not added — the
+// existing Cancel button already abandons the append cleanly.
+private struct AppendingToChip: View {
+    let title: String
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "text.append")
+                .font(.system(size: 12, weight: .semibold))
+            Text("Adding to: \(title)")
+                .font(.system(size: 13, weight: .medium))
+                .lineLimit(1)
+                .truncationMode(.tail)
+        }
+        .foregroundStyle(Color.accentColor)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(
+            Capsule().fill(Color(.tertiarySystemFill))
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Adding to note: \(title)")
     }
 }
 

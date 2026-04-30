@@ -1,9 +1,20 @@
 import SwiftUI
 
+/// Tracks which note (if any) is currently presented in NoteDetailView. Used
+/// by the floating action area to surface a "Continue recording" mini button
+/// next to the play FAB while the user is reading a note.
+@MainActor
+final class NoteFocus: ObservableObject {
+    static let shared = NoteFocus()
+    @Published var activeNoteId: UUID?
+    private init() {}
+}
+
 struct ContentView: View {
     enum BottomTab { case notes, settings }
 
     @StateObject private var status = TranscriptionStatus.shared
+    @StateObject private var noteFocus = NoteFocus.shared
     @State private var tab: BottomTab = .notes
 
     var body: some View {
@@ -20,11 +31,22 @@ struct ContentView: View {
                 TabPill(tab: $tab)
                 Spacer()
                 if !status.isRecording {
-                    StartRecordingButton(
-                        isEnabled: status.model == .ready,
-                        downloadProgress: status.modelDownloadProgress
-                    )
-                    .transition(.scale(scale: 0.6).combined(with: .opacity))
+                    HStack(spacing: 10) {
+                        if let id = noteFocus.activeNoteId {
+                            ContinueRecordingButton(
+                                noteId: id,
+                                isEnabled: status.model == .ready
+                            )
+                            .transition(.scale(scale: 0.6).combined(with: .opacity))
+                        }
+                        StartRecordingButton(
+                            isEnabled: status.model == .ready,
+                            downloadProgress: status.modelDownloadProgress
+                        )
+                        .transition(.scale(scale: 0.6).combined(with: .opacity))
+                    }
+                    .animation(.spring(response: 0.32, dampingFraction: 0.8),
+                               value: noteFocus.activeNoteId)
                 }
             }
             .padding(.horizontal, 18)
@@ -88,6 +110,47 @@ private struct GlassPillBackground: ViewModifier {
             content
                 .background(Capsule().fill(.regularMaterial))
                 .overlay(Capsule().strokeBorder(.white.opacity(0.06), lineWidth: 0.5))
+        }
+    }
+}
+
+// Smaller, tinted sibling of the play FAB. Visible only while a note is
+// presented in NoteDetailView (`NoteFocus.shared.activeNoteId != nil`), so
+// taps unambiguously append to that specific note rather than create a fresh
+// one.
+private struct ContinueRecordingButton: View {
+    let noteId: UUID
+    let isEnabled: Bool
+
+    var body: some View {
+        Button(action: start) {
+            Image(systemName: "mic.fill")
+                .font(.system(size: 17, weight: .bold))
+                .foregroundStyle(Color(red: 0.25, green: 0.55, blue: 1.0))
+                .frame(width: 44, height: 44)
+                .background(
+                    Circle().fill(Color(red: 0.25, green: 0.55, blue: 1.0)
+                                  .opacity(isEnabled ? 0.18 : 0.10))
+                )
+                .overlay(
+                    Circle().strokeBorder(
+                        Color(red: 0.25, green: 0.55, blue: 1.0).opacity(0.35),
+                        lineWidth: 0.75
+                    )
+                )
+                .shadow(color: .black.opacity(0.12), radius: 5, y: 2)
+        }
+        .buttonStyle(.plain)
+        .disabled(!isEnabled)
+        .accessibilityLabel("Continue recording on this note")
+    }
+
+    private func start() {
+        Task {
+            try? await TranscriptionService.shared.recordAndTranscribe(
+                trigger: .manual,
+                appendingTo: noteId
+            )
         }
     }
 }

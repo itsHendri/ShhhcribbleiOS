@@ -7,6 +7,7 @@ struct NoteDetailView: View {
 
     @Bindable var note: Note
     @State private var showDeleteConfirm = false
+    @State private var isEditing: Bool = true
 
     // All notes (sorted by recency) — used to source the tag autocomplete
     // suggestion list. SwiftData @Query auto-updates as notes change.
@@ -36,13 +37,23 @@ struct NoteDetailView: View {
 
                 Divider()
 
-                TextEditor(text: $note.transcript)
-                    .font(.body)
-                    .frame(minHeight: 240)
-                    .scrollContentBackground(.hidden)
+                if isEditing {
+                    TextEditor(text: $note.transcript)
+                        .font(.body)
+                        .frame(minHeight: 240)
+                        .scrollContentBackground(.hidden)
+                } else {
+                    Text(renderedMarkdown)
+                        .font(.body)
+                        .frame(maxWidth: .infinity, minHeight: 240, alignment: .topLeading)
+                        .textSelection(.enabled)
+                        .contentShape(Rectangle())
+                        .onTapGesture { isEditing = true }
+                }
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 12)
+            .padding(.bottom, 80) // clearance for the floating play + continue buttons
         }
         .background(Color(.systemGroupedBackground))
         .navigationTitle("Note")
@@ -61,7 +72,17 @@ struct NoteDetailView: View {
                 }
             }
         }
-        .onDisappear { try? context.save() }
+        .onAppear {
+            // Open in view mode when the transcript already looks markdown-y
+            // (headings/bullets/links). Empty or plain transcripts open in
+            // edit mode so the user can keep typing without an extra tap.
+            isEditing = !note.transcript.containsMarkdownSyntax
+            NoteFocus.shared.activeNoteId = note.id
+        }
+        .onDisappear {
+            try? context.save()
+            NoteFocus.shared.activeNoteId = nil
+        }
         .confirmationDialog(
             "Delete this note?",
             isPresented: $showDeleteConfirm,
@@ -85,6 +106,16 @@ struct NoteDetailView: View {
         let m = seconds / 60
         let s = seconds % 60
         return String(format: "%d:%02d", m, s)
+    }
+
+    /// `.inlineOnlyPreservingWhitespace` keeps newlines (full markdown mode
+    /// collapses them, which makes a multi-line transcript unreadable). Falls
+    /// back to plain text on parse failure.
+    private var renderedMarkdown: AttributedString {
+        (try? AttributedString(
+            markdown: note.transcript,
+            options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+        )) ?? AttributedString(note.transcript)
     }
 
     private var distinctTagsAcrossAllNotes: [String] {

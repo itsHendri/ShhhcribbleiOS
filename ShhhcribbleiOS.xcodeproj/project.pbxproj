@@ -14,6 +14,7 @@
 		1CF7B95C1AF267E26C793831 /* NotesRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 656869E266D1C8CCF0A5B31B /* NotesRepository.swift */; };
 		239F705F50711D4DFD4AF893 /* String+Filters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DC7CD9084CEFD0BC71D09EF /* String+Filters.swift */; };
 		25F3B3ACE6D69DB37CDA755F /* CancelRecordingIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEDBF7C3A2E0ADE0D14B7EFE /* CancelRecordingIntent.swift */; };
+		3274E60B92976B14A622E23B /* String+Markdown.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A5CFFCA2877D0747EE8059C /* String+Markdown.swift */; };
 		32EF336E4F1238643CD62402 /* NotesListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0455E8A2F77821C2798406E2 /* NotesListView.swift */; };
 		39709EDB971E5B5F478230AA /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8825A2B0AA1C8E60DA3A31BB /* SettingsView.swift */; };
 		3E908E5AFC9334B562802178 /* StopRecordingIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D583108174E01A3A8E7318A /* StopRecordingIntent.swift */; };
@@ -120,6 +121,7 @@
 		8251392958D48F0A74CFEA33 /* AudioSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSessionManager.swift; sourceTree = "<group>"; };
 		85103E7E6F47861A98A85AF8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		8825A2B0AA1C8E60DA3A31BB /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		9A5CFFCA2877D0747EE8059C /* String+Markdown.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Markdown.swift"; sourceTree = "<group>"; };
 		A507110BACFF08E47FFE2EFC /* CustomWordsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomWordsView.swift; sourceTree = "<group>"; };
 		A660C5D593C571BE20F2F69E /* ShhhcribbleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShhhcribbleApp.swift; sourceTree = "<group>"; };
 		A66FFE6583F71BE22473665B /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -313,6 +315,7 @@
 			isa = PBXGroup;
 			children = (
 				4DC7CD9084CEFD0BC71D09EF /* String+Filters.swift */,
+				9A5CFFCA2877D0747EE8059C /* String+Markdown.swift */,
 				78E2494F7C979E52B94887C1 /* String+Substitutions.swift */,
 				DF1C9A70FCBEE2639F513380 /* String+TitleGeneration.swift */,
 			);
@@ -506,6 +509,7 @@
 				05C4764EDF8D8245F48C899B /* StartRecordingIntent.swift in Sources */,
 				3E908E5AFC9334B562802178 /* StopRecordingIntent.swift in Sources */,
 				239F705F50711D4DFD4AF893 /* String+Filters.swift in Sources */,
+				3274E60B92976B14A622E23B /* String+Markdown.swift in Sources */,
 				6375D73C63BE966EE67C623A /* String+Substitutions.swift in Sources */,
 				FC825DC4939F22412C816BCD /* String+TitleGeneration.swift in Sources */,
 				F16617FBF0D0DBD61899D5D9 /* SubstitutionsView.swift in Sources */,

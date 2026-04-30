@@ -18,6 +18,9 @@ Runs fully on-device using [FluidAudio](https://github.com/FluidInference/FluidA
 - **App Intents** — `StartRecordingIntent` and `StopRecordingIntent` discoverable from Siri / Shortcuts / Back Tap.
 - **Vocabulary settings** — auto-correct casing for proper nouns (Custom Words), apply find/replace rules to transcripts (Substitutions), and add personal filler words to strip (Filler Words).
 - **Inline error UX** in the recording overlay — distinct surfaces for mic permission denied (with Open Settings), no speech detected, and model-load failure (with Retry).
+- **Append-to-note** — a 44pt tinted mic FAB appears next to the play button while you're reading a note. Tapping it records a follow-up that's appended (separated by `\n\n`) to that specific note instead of creating a new one. The recording overlay surfaces an "Adding to: <title>" chip so you know what you're appending to.
+- **Markdown auto-render** — notes whose transcript contains markdown syntax (headings, bullets, links) open in a rendered preview. Tap the text to switch back to the editor.
+- **Light/dark recording overlay** — overlay follows the system colour scheme. Retry button shows a spinner while reloading the model. Model-load errors are mapped to short, action-oriented copy (offline, timeout, disk full) instead of dumping raw `NSError` userInfo. First-ever model download surfaces as an accent ring around the play button.
 
 ## Requirements
 
@@ -47,7 +50,8 @@ ShhhcribbleiOS/
 └── Extensions/
     ├── String+Filters.swift           # filler-word removal (built-in + custom)
     ├── String+Substitutions.swift     # find/replace pass + auto-cased hotwords
-    └── String+TitleGeneration.swift
+    ├── String+TitleGeneration.swift
+    └── String+Markdown.swift          # containsMarkdownSyntax heuristic for view/edit auto-toggle
 
 ShhhcribbleShared/         # Framework — StartRecordingIntent, StopRecordingIntent,
                            # CancelRecordingIntent, ShhhcribbleActivityAttributes
@@ -108,6 +112,53 @@ grep 'shhhcribble.diag' /tmp/sb_syslog.log
 - **Fresh `AVAudioEngine` per recording.** Self-heals on AirPods reconnect, Continuity Mic swaps, etc.
 - **SwiftData** for the `Note` store. The `embedding: Data?` field lands in v1 to avoid a migration when semantic search ships in v3.
 - **Filler-word filter and `TypingViewModel`** are deterministic; the live transcript you see is exactly what gets saved + copied.
+
+## Working with Claude Code
+
+This project is set up to be extended with [Claude Code](https://claude.com/claude-code). The core context lives in [CLAUDE.md](CLAUDE.md) — read it (or have Claude read it) at the start of every session. It documents architecture, hard constraints (especially around AirPods + audio sessions), the SwiftData schema, the build sequence, and known minor issues.
+
+### Starting a new session
+
+When you open Claude Code in this repo, two opening prompts cover most cases:
+
+**1. Onboarding prompt — get Claude up to speed:**
+```
+Read CLAUDE.md fully, including the "Working notes" section at the bottom and
+the "Known minor issues / future polish" list. Then walk through the
+Features/, Services/, and Models/ directories so you understand the current
+shape of the recording flow, the SwiftData Note model, and the recording
+overlay state machine. Don't make any changes yet — just confirm you've
+loaded the context.
+```
+
+This forces Claude to internalise the load-bearing decisions (no voice processing for Bluetooth, fresh `AVAudioEngine` per recording, App Group deferred until paid Developer Program, etc.) before it starts proposing changes.
+
+**2. Planning prompt — pick the next sprint:**
+```
+Based on CLAUDE.md (especially the "Build sequence" section and "Known minor
+issues / future polish" list), what's the most valuable next sprint to ship?
+Consider:
+  - what's already in flight or partially done,
+  - the explicit "Sprint 5 — Keyboard extension" prerequisites (paid
+    Developer Program, App Group restoration),
+  - the deferred image-attachments feature flagged as next-PR in
+    Sprint 4.5+1,
+  - and any small polish items that could ship as a quick win first.
+
+Propose one to three sprint options, ranked by impact-vs-effort, and explain
+the trade-offs. Don't write code yet — I want to choose first.
+```
+
+Claude should respond with options, not a single forced answer. Pick one, then run it through plan mode (`shift+tab`) before letting it touch code — every load-bearing area in CLAUDE.md was learned the hard way.
+
+### Working rules for Claude in this codebase
+
+These are baked into CLAUDE.md but worth surfacing here:
+- **Never relitigate a load-bearing decision** without a strong reason — if Claude proposes one, push back.
+- **One feature per branch.** Verify on a real iPhone with AirPods + music playing before committing.
+- **Update CLAUDE.md** whenever a change adds a new load-bearing decision or pref key.
+- **Never connect to production** systems or use production credentials (this repo is personal, but the global SwissBorg guidance applies regardless).
+- **Plan mode first** for anything non-trivial. The cost of an incorrect audio-session change is hours of debugging on-device.
 
 ## Forked from
 

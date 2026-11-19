@@ -346,6 +346,109 @@ actor TranscriptionService {
 
     private var bgTaskId: UIBackgroundTaskIdentifier = .invalid
 
+    // MARK: - File transcription
+
+    /// True while an audio file is being transcribed. Recording waits for
+    /// it: one job at a time on the speech model.
+    private var fileBusy = false
+
+    /// Transcribes an audio file and returns the raw text. Always uses
+    /// Parakeet TDT v3, whatever engine is chosen for dictation, because a
+    /// file has no need for live partials and deserves punctuation. If the
+    /// dictation engine is the streaming one, a TDT model is loaded just for
+    /// this call and released afterwards.
+    func transcribeFile(at url: URL) async throws -> String {
+        let manager: AsrManager
+        var temporary = false
+        if loadedMode == .tdt, let loaded = tdtManager {
+            manager = loaded
+        } else {
+            let mlConfig = MLModelConfiguration()
+            let useANE = UserDefaults.standard.object(forKey: "useANE") as? Bool ?? true
+            mlConfig.computeUnits = useANE ? .cpuAndNeuralEngine : .cpuOnly
+            let models = try await AsrModels.downloadAndLoad(configuration: mlConfig, version: .v3)
+            let fresh = AsrManager(config: .default)
+            try await fresh.loadModels(models)
+            manager = fresh
+            temporary = true
+        }
+        var decoderState = TdtDecoderState.make()
+        do {
+            let result = try await manager.transcribe(url, decoderState: &decoderState)
+            if temporary { await manager.cleanup() }
+            return result.text
+        } catch {
+            if temporary { await manager.cleanup() }
+            throw error
+        }
+    }
+
+    /// Turns an audio file into a note. `id` becomes the note's id; saving
+    /// is insert-if-absent, so importing the same recording twice (two
+    /// receivers fetching one recorder file) leaves one note. Returns true
+    /// when a new note was saved. The clipboard is left alone.
+    @discardableResult
+    func importAudioFile(
+        _ url: URL,
+        id: UUID = UUID(),
+        createdAt: Date = Date()
+    ) async -> Bool {
+        guard !recording, !fileBusy else {
+            await MainActor.run {
+                ToastManager.shared.show("Busy, try again in a moment", systemImage: "hourglass")
+            }
+            return false
+        }
+        fileBusy = true
+        defer { fileBusy = false }
+
+        let scoped = url.startAccessingSecurityScopedResource()
+        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+
+        await MainActor.run {
+            ToastManager.shared.show("Transcribing file…", systemImage: "waveform")
+        }
+        do {
+            let duration: TimeInterval = (try? AVAudioFile(forReading: url)).map {
+                Double($0.length) / $0.processingFormat.sampleRate
+            } ?? 0
+            let raw = try await transcribeFile(at: url)
+            let filterOn = UserDefaults.standard.object(forKey: "filterFillerWords") as? Bool ?? true
+            let afterFiller = filterOn ? FillerWordFilter.filter(raw) : raw
+            let text = SubstitutionPass.apply(afterFiller, rules: SubstitutionPass.currentRules())
+            guard !text.isEmpty else {
+                await TranscriptionStatus.shared.event("File import: no speech")
+                await MainActor.run {
+                    ToastManager.shared.show("No speech detected", systemImage: "waveform.slash")
+                }
+                return false
+            }
+            let inserted = await MainActor.run {
+                Library.shared.insert(
+                    transcript: text,
+                    duration: duration,
+                    trigger: .file,
+                    id: id,
+                    createdAt: createdAt
+                )
+            }
+            await TranscriptionStatus.shared.event(inserted ? "File import: saved" : "File import: already present")
+            await MainActor.run {
+                ToastManager.shared.show(
+                    inserted ? "Saved from file" : "Already in your notes",
+                    systemImage: inserted ? "tray.and.arrow.down.fill" : "checkmark"
+                )
+            }
+            return inserted
+        } catch {
+            await TranscriptionStatus.shared.event("File import failed: \(error)")
+            await MainActor.run {
+                ToastManager.shared.show("Couldn't transcribe that file", systemImage: "exclamationmark.triangle")
+            }
+            return false
+        }
+    }
+
     #if DEBUG
     /// Test hook, debug builds only. Launching with `-ShhhTestClip <path>`
     /// feeds that audio file into the pipeline in place of the microphone
@@ -392,6 +495,15 @@ actor TranscriptionService {
         appendingTo: UUID? = nil
     ) async throws {
         guard !recording else { return }
+        guard !fileBusy else {
+            await MainActor.run {
+                ToastManager.shared.show("Finishing a file first", systemImage: "hourglass")
+                if TranscriptionStatus.shared.phase == .recording {
+                    TranscriptionStatus.shared.setPhase(.idle)
+                }
+            }
+            return
+        }
 
         // Pre-flight mic permission so we don't fail silently inside the
         // tap install. Surface a typed error UX in the recording overlay.
@@ -422,7 +534,7 @@ actor TranscriptionService {
         currentTrigger = trigger
         appendTargetId = appendingTo
         if let id = appendingTo {
-            let title = await NotesRepository.shared.title(for: id)
+            let title = await Library.shared.title(for: id)
             await MainActor.run {
                 TranscriptionStatus.shared.appendTargetTitle = title
             }
@@ -736,10 +848,10 @@ actor TranscriptionService {
     ) {
         UIPasteboard.general.string = text
         if let id = appendingTo {
-            NotesRepository.shared.append(transcript: text, to: id)
+            Library.shared.append(transcript: text, to: id)
             ToastManager.shared.show("Added to note", systemImage: "text.append")
         } else {
-            NotesRepository.shared.insert(
+            Library.shared.insert(
                 transcript: text,
                 duration: duration,
                 trigger: trigger

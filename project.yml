@@ -70,6 +70,14 @@ targets:
             CFBundleURLSchemes:
               - shhhcribble
         LSRequiresIPhoneOS: true
+        # Audio files can be opened in the app from Files or a share sheet.
+        LSSupportsOpeningDocumentsInPlace: true
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: Audio
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            LSItemContentTypes:
+              - public.audio
         NSMicrophoneUsageDescription: "Shhhcribble records audio to transcribe your speech. Recording only happens when you trigger it."
         NSSupportsLiveActivities: true
         UIBackgroundModes:

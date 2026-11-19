@@ -1,5 +1,4 @@
 import ShhhcribbleShared
-import SwiftData
 import SwiftUI
 import os
 
@@ -21,7 +20,8 @@ struct ShhhcribbleApp: App {
             // A real abort: drops the audio, saves nothing.
             await TranscriptionService.shared.cancelRecording()
         }
-        StartRecordingIntent.performer = { @MainActor in
+        StartRecordingIntent.performer = { @MainActor source in
+            let trigger = TriggerSource(rawValue: source) ?? .shortcut
             let service = TranscriptionService.shared
             let status = TranscriptionStatus.shared
             if status.isRecording {
@@ -37,7 +37,7 @@ struct ShhhcribbleApp: App {
             // absorbs touches and makes Stop / Cancel inert.
             Task.detached(priority: .userInitiated) {
                 do {
-                    try await service.recordAndTranscribe(trigger: .manual)
+                    try await service.recordAndTranscribe(trigger: trigger)
                 } catch {
                     let msg = String(describing: error)
                     diagLog.error("recordAndTranscribe threw \(msg, privacy: .public)")
@@ -89,10 +89,15 @@ struct ShhhcribbleApp: App {
                     }
                 }
         }
-        .modelContainer(NotesRepository.shared.container)
     }
 
     private func handle(url: URL) {
+        // An audio file opened from Files or a share sheet: transcribe it
+        // into a note.
+        if url.isFileURL {
+            Task { await TranscriptionService.shared.importAudioFile(url) }
+            return
+        }
         guard url.scheme?.lowercased() == "shhhcribble" else { return }
         let action = (url.host ?? url.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))).lowercased()
 
@@ -105,7 +110,7 @@ struct ShhhcribbleApp: App {
             status.launchedViaURL = true
             Task {
                 do {
-                    try await TranscriptionService.shared.recordAndTranscribe()
+                    try await TranscriptionService.shared.recordAndTranscribe(trigger: .shortcut)
                 } catch {
                     await MainActor.run {
                         if status.phase == .recording { status.setPhase(.idle) }

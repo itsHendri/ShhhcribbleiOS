@@ -34,11 +34,3 @@ final class Note {
     }
 }
 
-enum TriggerSource: String, Codable, Sendable {
-    case controlCenter
-    case airPods
-    case backTap
-    case actionButton
-    case keyboard
-    case manual
-}

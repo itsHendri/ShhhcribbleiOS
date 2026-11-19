@@ -8,7 +8,7 @@ struct RecordControlWidget: ControlWidget {
 
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: Self.kind) {
-            ControlWidgetButton(action: StartRecordingIntent()) {
+            ControlWidgetButton(action: StartFromControlIntent()) {
                 Label("Record", systemImage: "waveform")
             }
         }

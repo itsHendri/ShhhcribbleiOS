@@ -1,22 +1,36 @@
-import SwiftData
 import SwiftUI
 
 struct NoteDetailView: View {
-    @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
+    @ObservedObject private var library = Library.shared
 
-    @Bindable var note: Note
+    let noteID: UUID
+
+    /// The note as the library holds it right now. Edits write straight
+    /// through, so text appended by a recording while this screen is open
+    /// shows up here and is never overwritten by a stale copy.
+    private var note: LibraryNote {
+        library.note(id: noteID)
+            ?? LibraryNote(id: noteID, title: "", transcript: "", duration: 0, trigger: .manual)
+    }
+
+    private func field<T>(_ keyPath: WritableKeyPath<LibraryNote, T>) -> Binding<T> {
+        Binding(
+            get: { note[keyPath: keyPath] },
+            set: { newValue in
+                guard var current = library.note(id: noteID) else { return }
+                current[keyPath: keyPath] = newValue
+                library.update(current)
+            }
+        )
+    }
     @State private var showDeleteConfirm = false
     @State private var isEditing: Bool = true
-
-    // All notes (sorted by recency) — used to source the tag autocomplete
-    // suggestion list. SwiftData @Query auto-updates as notes change.
-    @Query(sort: \Note.createdAt, order: .reverse) private var allNotes: [Note]
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                TextField("Title", text: $note.title, axis: .vertical)
+                TextField("Title", text: field(\.title), axis: .vertical)
                     .font(.system(size: 24, weight: .bold))
                     .lineLimit(1...3)
 
@@ -28,17 +42,14 @@ struct NoteDetailView: View {
                 .foregroundStyle(.secondary)
 
                 TagEditor(
-                    tags: Binding(
-                        get: { note.tags },
-                        set: { note.tags = $0 }
-                    ),
-                    suggestions: distinctTagsAcrossAllNotes
+                    tags: field(\.tags),
+                    suggestions: library.allTags
                 )
 
                 Divider()
 
                 if isEditing {
-                    TextEditor(text: $note.transcript)
+                    TextEditor(text: field(\.transcript))
                         .font(.body)
                         .frame(minHeight: 240)
                         .scrollContentBackground(.hidden)
@@ -80,7 +91,6 @@ struct NoteDetailView: View {
             NoteFocus.shared.activeNoteId = note.id
         }
         .onDisappear {
-            try? context.save()
             NoteFocus.shared.activeNoteId = nil
         }
         .confirmationDialog(
@@ -89,8 +99,7 @@ struct NoteDetailView: View {
             titleVisibility: .visible
         ) {
             Button("Delete", role: .destructive) {
-                context.delete(note)
-                try? context.save()
+                library.delete(id: noteID)
                 dismiss()
             }
             Button("Cancel", role: .cancel) {}
@@ -116,18 +125,6 @@ struct NoteDetailView: View {
             markdown: note.transcript,
             options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
         )) ?? AttributedString(note.transcript)
-    }
-
-    private var distinctTagsAcrossAllNotes: [String] {
-        var seen = Set<String>()
-        var out: [String] = []
-        for n in allNotes {
-            for tag in n.tags where !seen.contains(tag) {
-                seen.insert(tag)
-                out.append(tag)
-            }
-        }
-        return out.sorted()
     }
 }
 

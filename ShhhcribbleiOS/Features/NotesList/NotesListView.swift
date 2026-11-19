@@ -1,26 +1,17 @@
-import SwiftData
 import SwiftUI
+import UniformTypeIdentifiers
 import UIKit
 
 struct NotesListView: View {
-    @Environment(\.modelContext) private var context
-    @Query(sort: \Note.createdAt, order: .reverse) private var notes: [Note]
+    @ObservedObject private var library = Library.shared
+    private var notes: [LibraryNote] { library.notes }
     @State private var searchText: String = ""
     @State private var selectedTags: Set<String> = []
+    @State private var showFileImporter = false
 
-    private var allTags: [String] {
-        var seen = Set<String>()
-        var out: [String] = []
-        for note in notes {
-            for tag in note.tags where !seen.contains(tag) {
-                seen.insert(tag)
-                out.append(tag)
-            }
-        }
-        return out.sorted()
-    }
+    private var allTags: [String] { library.allTags }
 
-    private var filteredNotes: [Note] {
+    private var filteredNotes: [LibraryNote] {
         let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         let needle = trimmed.lowercased()
         return notes.filter { note in
@@ -44,6 +35,14 @@ struct NotesListView: View {
                     Text("Notes")
                         .font(.system(size: 32, weight: .bold))
                     Spacer()
+                    Button {
+                        showFileImporter = true
+                    } label: {
+                        Image(systemName: "square.and.arrow.down")
+                            .font(.system(size: 18, weight: .semibold))
+                            .frame(width: 44, height: 44)
+                    }
+                    .accessibilityLabel("Import audio file")
                     if !notes.isEmpty {
                         Button("Clear All", role: .destructive, action: clearAll)
                             .font(.system(size: 15, weight: .semibold))
@@ -83,7 +82,7 @@ struct NotesListView: View {
                 } else {
                     List {
                         ForEach(filteredNotes) { note in
-                            NavigationLink(value: note) {
+                            NavigationLink(value: note.id) {
                                 NoteRow(note: note,
                                         onCopy: { copy(note) },
                                         onDelete: { delete(note) })
@@ -96,28 +95,28 @@ struct NotesListView: View {
             }
             .background(Color(.systemGroupedBackground))
             .toolbar(.hidden, for: .navigationBar)
-            .navigationDestination(for: Note.self) { note in
-                NoteDetailView(note: note)
+            .fileImporter(isPresented: $showFileImporter, allowedContentTypes: [.audio]) { result in
+                guard case .success(let url) = result else { return }
+                Task { await TranscriptionService.shared.importAudioFile(url) }
+            }
+            .navigationDestination(for: UUID.self) { id in
+                NoteDetailView(noteID: id)
             }
         }
     }
 
-    private func copy(_ note: Note) {
+    private func copy(_ note: LibraryNote) {
         UIPasteboard.general.string = note.transcript
         ToastManager.shared.show("Copied to clipboard", systemImage: "doc.on.doc.fill")
     }
 
-    private func delete(_ note: Note) {
-        context.delete(note)
-        try? context.save()
+    private func delete(_ note: LibraryNote) {
+        library.delete(id: note.id)
     }
 
     private func clearAll() {
         selectedTags.removeAll()
-        for note in notes {
-            context.delete(note)
-        }
-        try? context.save()
+        library.deleteAll()
     }
 }
 
@@ -203,7 +202,7 @@ private struct SearchBar: View {
 }
 
 private struct NoteRow: View {
-    let note: Note
+    let note: LibraryNote
     let onCopy: () -> Void
     let onDelete: () -> Void
 

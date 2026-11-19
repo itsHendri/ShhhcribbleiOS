@@ -8,6 +8,9 @@ Read `../../docs/ECOSYSTEM.md` first. Where it and this file disagree, it wins.
 - The paid Apple Developer Program is in place. Team `L9T3PX7HVH` is the paid team, not a Personal Team. The App Group, the home-screen widget and the keyboard extension are unblocked. Every "Personal Team" workaround below is due for removal.
 - Reopened decisions (they no longer apply as written below): "No LLM post-processing, ever", "No AI summaries", "No iCloud sync". Cleanup and summaries run on-device with the same guards as the Mac app. Sync is the user's own iCloud, opt-in, off by default.
 - SwiftData is on its way out. Storage moves to the shared Swift package the Mac track designs (SQLite, CKSyncEngine). Do not extend the `Note` model.
+- Notes are read and written only through `Library` (`Services/Library.swift`), a value-type seam. `SwiftDataBackend.swift` and `Models/Note.swift` are the only files that know SwiftData; adopting the shared package means one new `LibraryBackend`. Never use `@Query` or a model context in a view.
+- Audio files become notes through `TranscriptionService.importAudioFile(_:id:)` (always Parakeet TDT v3, insert-if-absent by id). The recorder receiver will call the same function with the recording id.
+- Tests: `xcodebuild ... test` runs unit tests plus a real-model run on `ShhhcribbleiOSTests/Fixtures/spoken-clip.wav`. In debug builds, launching with `-ShhhTestClip <path>` feeds a clip in place of the microphone.
 - Still load-bearing, unchanged: the AirPods audio rules, tap-to-stop, no input device picker, no voice processing.
 - The sprint list below is history. The current order of work is the approved plan of 2026-11-19.
 

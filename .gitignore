@@ -8,14 +8,12 @@ DerivedData/
 *.xcworkspace/xcuserdata/
 *.xcodeproj/xcuserdata/
 *.xcodeproj/project.xcworkspace/xcuserdata/
-*.xcodeproj/project.xcworkspace/xcshareddata/
 xcuserdata/
 
 # Swift Package Manager
 .swiftpm/
 .build/
 Packages/
-Package.resolved
 
 # CocoaPods (not used, but ignore if added)
 Pods/

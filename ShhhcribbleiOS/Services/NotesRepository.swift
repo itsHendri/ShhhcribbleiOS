@@ -11,7 +11,12 @@ final class NotesRepository {
 
     private init() {
         do {
-            self.container = try ModelContainer(for: Note.self)
+            // Keep this store in the app's own sandbox. With the App Group
+            // entitlement present SwiftData would otherwise move it into the
+            // shared container. The shared library there belongs to the
+            // shared package (step 4); this store is retired then.
+            let config = ModelConfiguration(groupContainer: .none)
+            self.container = try ModelContainer(for: Note.self, configurations: config)
         } catch {
             fatalError("Unable to create ModelContainer for Note: \(error)")
         }

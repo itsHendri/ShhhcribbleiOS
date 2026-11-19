@@ -119,7 +119,9 @@ final class TranscriptionStatus: ObservableObject {
 
     func set(_ status: ModelStatus) { self.model = status }
     func event(_ text: String) {
-        print("[Shhhcribble] \(text)")
+        // os.Logger so events are readable from a device log, not only in
+        // Xcode's console. Transcript text never goes through here in full.
+        diagLog.notice("\(text, privacy: .public)")
         self.lastEvent = text
     }
 
@@ -203,7 +205,7 @@ actor TranscriptionService {
         // Publish download fraction during the .downloading phase; reset to
         // nil for listing/compiling and on completion, so the play-button ring
         // only shows real byte transfer.
-        let progressHandler: DownloadUtils.ProgressHandler = { progress in
+        let progressHandler: ProgressHandler = { progress in
             Task { @MainActor in
                 if case .downloading = progress.phase {
                     TranscriptionStatus.shared.modelDownloadProgress = progress.fractionCompleted
@@ -344,6 +346,47 @@ actor TranscriptionService {
 
     private var bgTaskId: UIBackgroundTaskIdentifier = .invalid
 
+    #if DEBUG
+    /// Test hook, debug builds only. Launching with `-ShhhTestClip <path>`
+    /// feeds that audio file into the pipeline in place of the microphone
+    /// and stops by itself at the end, so transcription can be checked end
+    /// to end with no hardware. AudioRecorder is not involved at all.
+    static var debugClipURL: URL? {
+        guard let path = UserDefaults.standard.string(forKey: "ShhhTestClip"),
+              !path.isEmpty else { return nil }
+        return URL(fileURLWithPath: path)
+    }
+
+    private static func feedDebugClip(
+        _ url: URL,
+        into continuation: AsyncStream<AVAudioPCMBuffer>.Continuation
+    ) {
+        Task.detached {
+            try? await TranscriptionService.shared.ensureModelLoaded()
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            do {
+                let file = try AVAudioFile(forReading: url)
+                let format = file.processingFormat
+                let chunk: AVAudioFrameCount = 4800
+                while file.framePosition < file.length {
+                    guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: chunk) else { break }
+                    try file.read(into: buffer, frameCount: chunk)
+                    if buffer.frameLength == 0 { break }
+                    continuation.yield(buffer)
+                    // About four times real time: fast, but still arrives
+                    // in pieces the way microphone audio does.
+                    let seconds = Double(buffer.frameLength) / format.sampleRate / 4
+                    try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+                }
+            } catch {
+                await TranscriptionStatus.shared.event("Test clip failed: \(error)")
+            }
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            await TranscriptionService.shared.stopRecording()
+        }
+    }
+    #endif
+
     func recordAndTranscribe(
         trigger: TriggerSource = .manual,
         appendingTo: UUID? = nil
@@ -452,6 +495,12 @@ actor TranscriptionService {
 
         let buffers = AsyncStream<AVAudioPCMBuffer>(bufferingPolicy: .unbounded) { continuation in
             self.streamContinuation = continuation
+            #if DEBUG
+            if let clip = Self.debugClipURL {
+                Self.feedDebugClip(clip, into: continuation)
+                return
+            }
+            #endif
             do {
                 try recorder.start(
                     onBuffer: { buffer in

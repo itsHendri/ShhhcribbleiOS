@@ -2,7 +2,7 @@
 
 Fast on-device voice-to-text for iPhone. Tap the play button (or trigger via Shortcuts / Back Tap), speak, and the transcript lands as a saved Note **and** on your clipboard. A Live Activity keeps the recording visible across apps and on the lock screen.
 
-Runs fully on-device using [FluidAudio](https://github.com/FluidInference/FluidAudio) (Parakeet on the Apple Neural Engine). No accounts, no network calls, no servers.
+Runs fully on-device using [FluidAudio](https://github.com/FluidInference/FluidAudio) (Parakeet on the Apple Neural Engine). No accounts and no servers. The only network use is the one-time download of the speech model.
 
 > **Read [CLAUDE.md](CLAUDE.md) before extending the codebase.** It is the single source of truth for architecture decisions, audio-session rules (especially around AirPods), and Sprint sequencing. The "Working notes" section at the bottom captures gotchas around signing, logging, App Groups, and Live Activities under a free Personal Team.
 
@@ -15,7 +15,7 @@ Runs fully on-device using [FluidAudio](https://github.com/FluidInference/FluidA
 - **Live Activity + Dynamic Island** — recording persists when you switch apps. Tap the card to return to the in-app overlay.
 - **Notes list** with per-row Copy + swipe-to-delete; tap a row to copy.
 - **Toast feedback** on every clipboard write.
-- **App Intents** — `StartRecordingIntent` and `StopRecordingIntent` discoverable from Siri / Shortcuts / Back Tap.
+- **App Intents** — `StartRecordingIntent` is discoverable from Siri / Shortcuts / Back Tap. Stop and Cancel run from the Live Activity on the lock screen.
 - **Vocabulary settings** — auto-correct casing for proper nouns (Custom Words), apply find/replace rules to transcripts (Substitutions), and add personal filler words to strip (Filler Words).
 - **Inline error UX** in the recording overlay — distinct surfaces for mic permission denied (with Open Settings), no speech detected, and model-load failure (with Retry).
 - **Append-to-note** — a 44pt tinted mic FAB appears next to the play button while you're reading a note. Tapping it records a follow-up that's appended (separated by `\n\n`) to that specific note instead of creating a new one. The recording overlay surfaces an "Adding to: <title>" chip so you know what you're appending to.
@@ -24,8 +24,8 @@ Runs fully on-device using [FluidAudio](https://github.com/FluidInference/FluidA
 
 ## Requirements
 
-- iPhone on iOS 18+ (tested on iOS 26 / iPhone 17 Pro).
-- Xcode 16+.
+- iPhone on iOS 26 or later.
+- Xcode 27 (the version it is built with today).
 - Microphone permission. Live Activities permission (granted on first recording).
 - For local development: `xcodegen` (`brew install xcodegen`).
 - Optional but recommended for device debugging: `libimobiledevice` (`brew install libimobiledevice`).
@@ -53,8 +53,9 @@ ShhhcribbleiOS/
     ├── String+TitleGeneration.swift
     └── String+Markdown.swift          # containsMarkdownSyntax heuristic for view/edit auto-toggle
 
-ShhhcribbleShared/         # Framework — StartRecordingIntent, StopRecordingIntent,
-                           # CancelRecordingIntent, ShhhcribbleActivityAttributes
+ShhhcribbleShared/         # Framework: ShhhcribbleActivityAttributes only. The intents
+                           # live in ShhhcribbleiOS/App/Intents and compile into both targets.
+ShhhcribbleiOSTests/       # Unit tests and the spoken test clip
 ShhhcribbleWidget/         # Widget extension — Live Activity + ControlWidget
 ```
 
@@ -92,7 +93,7 @@ After editing, regenerate the project:
 xcodegen generate
 ```
 
-`L9T3PX7HVH` (my Personal Team) and `com.hendrivanniekerk.*` are the values currently checked in. They will fail to sign on any other Apple ID.
+`L9T3PX7HVH` (my developer team) and `com.shhhcribble.ios*` are the values currently checked in. They will fail to sign on any other Apple ID.
 
 ## Build + install via CLI
 

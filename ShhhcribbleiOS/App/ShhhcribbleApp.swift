@@ -18,10 +18,8 @@ struct ShhhcribbleApp: App {
             await TranscriptionService.shared.stopRecording()
         }
         CancelRecordingIntent.performer = {
-            // Cancel from the Live Activity currently behaves identically
-            // to Stop (commits the recording). Real abort lives in the
-            // in-app Cancel button via TranscriptionService.cancelRecording.
-            await TranscriptionService.shared.stopRecording()
+            // A real abort: drops the audio, saves nothing.
+            await TranscriptionService.shared.cancelRecording()
         }
         StartRecordingIntent.performer = { @MainActor in
             let service = TranscriptionService.shared

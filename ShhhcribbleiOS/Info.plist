@@ -22,7 +22,7 @@
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>com.hendrivanniekerk.shhhcribble</string>
+			<string>com.shhhcribble.ios</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>shhhcribble</string>
@@ -45,7 +45,6 @@
 	<dict/>
 	<key>UIRequiredDeviceCapabilities</key>
 	<array>
-		<string>armv7</string>
 		<string>microphone</string>
 	</array>
 	<key>UISupportedInterfaceOrientations</key>

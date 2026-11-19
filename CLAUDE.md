@@ -1,5 +1,22 @@
 # ShhhcribbleiOS — Claude Code context
 
+## 2026-11-19: revived as part of the Shhhcribble ecosystem
+
+Read `../../docs/ECOSYSTEM.md` first. Where it and this file disagree, it wins.
+
+- This app is revived. It shares one library (notes, tasks, reminders) with the Mac app, replaces Apple Reminders on the phone, and is a second receiver for the pocket recorder.
+- The paid Apple Developer Program is in place. Team `L9T3PX7HVH` is the paid team, not a Personal Team. The App Group, the home-screen widget and the keyboard extension are unblocked. Every "Personal Team" workaround below is due for removal.
+- Reopened decisions (they no longer apply as written below): "No LLM post-processing, ever", "No AI summaries", "No iCloud sync". Cleanup and summaries run on-device with the same guards as the Mac app. Sync is the user's own iCloud, opt-in, off by default.
+- SwiftData is on its way out. Storage moves to the shared Swift package the Mac track designs (SQLite, CKSyncEngine). Do not extend the `Note` model.
+- Still load-bearing, unchanged: the AirPods audio rules, tap-to-stop, no input device picker, no voice processing.
+- The sprint list below is history. The current order of work is the approved plan of 2026-11-19.
+
+## Design canvas
+
+- 2026-11-19: [Shhhcribble iPhone](https://claude.ai/artifact/QiwDgUnpfz29rQK9GjegHN). Design rounds follow the `design-canvas` skill. Decisions are recorded in `docs/design/`.
+
+---
+
 Read this at the start of every session. It is the single source of truth for architecture decisions and hard constraints. Don't relitigate anything marked **load-bearing** without a strong reason and a note added here.
 
 ---

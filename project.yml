@@ -136,6 +136,8 @@ targets:
       - path: ShhhcribbleiOS/App/Intents/StartRecordingIntent.swift
       - path: ShhhcribbleiOS/App/Intents/StopRecordingIntent.swift
       - path: ShhhcribbleiOS/App/Intents/CancelRecordingIntent.swift
+      # Where the library is and how a due time reads: one copy of the rule.
+      - path: ShhhcribbleiOS/Services/LibraryLocation.swift
     info:
       path: ShhhcribbleWidget/Info.plist
       properties:
@@ -163,6 +165,11 @@ targets:
     dependencies:
       - target: ShhhcribbleShared
         embed: false
+      # The home-screen widgets read tasks and the latest note through the
+      # core's LibraryReader. One product for now, so the widget links all of
+      # it; the Mac track plans a smaller module for extensions.
+      - package: ShhhcribbleCore
+        product: ShhhcribbleCore
 
   ShhhcribbleiOSTests:
     type: bundle.unit-test

@@ -1,5 +1,6 @@
 import ShhhcribbleShared
 import SwiftUI
+import WidgetKit
 import ShhhcribbleCore
 import os
 
@@ -126,6 +127,25 @@ struct ShhhcribbleApp: App {
                     }
                 }
             }
+        case "widget-record":
+            // The widget's record button. Like the in-app button: it keeps
+            // recording across app switches and stops on Stop.
+            AppRouter.shared.tab = .notes
+            guard !status.isRecording else { return }
+            status.setPhase(.recording)
+            Task {
+                do {
+                    try await TranscriptionService.shared.recordAndTranscribe(trigger: .widget)
+                } catch {
+                    await MainActor.run {
+                        if status.phase == .recording { status.setPhase(.idle) }
+                    }
+                }
+            }
+        case "tasks":
+            AppRouter.shared.tab = .tasks
+        case "notes":
+            AppRouter.shared.tab = .notes
         case "stop":
             status.launchedViaURL = true
             Task { await TranscriptionService.shared.stopRecording() }

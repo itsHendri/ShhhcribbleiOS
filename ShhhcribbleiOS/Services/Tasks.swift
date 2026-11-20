@@ -1,6 +1,7 @@
 import Combine
 import Foundation
 import ShhhcribbleCore
+import WidgetKit
 
 /// A task as the views see it. A task is a note in the shared library with
 /// `isTask` set; this is the plain value the screens work with.
@@ -35,7 +36,11 @@ struct TaskGroups: Equatable {
 final class TaskList: ObservableObject {
     static let shared: TaskList = {
         let list = TaskList(store: SharedLibrary.store)
-        list.onChange = { notes in ReminderScheduler.shared.reconcile(with: notes) }
+        list.onChange = { notes in
+            ReminderScheduler.shared.reconcile(with: notes)
+            // The home-screen widgets read the same library.
+            WidgetCenter.shared.reloadAllTimelines()
+        }
         list.onChange?(SharedLibrary.store.notes)
         return list
     }()
@@ -157,32 +162,5 @@ final class TaskList: ObservableObject {
             completedAt: note.completedAt,
             spokenText: note.rawText
         )
-    }
-}
-
-/// How a due time reads in a row and in a toast. Words, never colour.
-enum DueLabel {
-    static func text(for due: Date, allDay: Bool, now: Date = Date(), calendar: Calendar = .current) -> String {
-        let day: String
-        if calendar.isDate(due, inSameDayAs: now) {
-            day = "Today"
-        } else if let tomorrow = calendar.date(byAdding: .day, value: 1, to: now),
-                  calendar.isDate(due, inSameDayAs: tomorrow) {
-            day = "Tomorrow"
-        } else if let yesterday = calendar.date(byAdding: .day, value: -1, to: now),
-                  calendar.isDate(due, inSameDayAs: yesterday) {
-            day = "Yesterday"
-        } else {
-            let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: now),
-                                               to: calendar.startOfDay(for: due)).day ?? 0
-            let format = Date.FormatStyle(calendar: calendar, timeZone: calendar.timeZone)
-            day = (1..<7).contains(days)
-                ? due.formatted(format.weekday(.abbreviated))
-                : due.formatted(format.day().month(.abbreviated))
-        }
-        guard !allDay else { return day }
-        let time = due.formatted(Date.FormatStyle(calendar: calendar, timeZone: calendar.timeZone)
-            .hour(.twoDigits(amPM: .omitted)).minute(.twoDigits))
-        return "\(day) \(time)"
     }
 }

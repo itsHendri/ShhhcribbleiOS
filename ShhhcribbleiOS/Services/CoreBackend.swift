@@ -10,8 +10,6 @@ import ShhhcribbleCore
 /// three files side by side while it is open; they share this folder.
 @MainActor
 enum SharedLibrary {
-    nonisolated static let appGroup = "group.com.shhhcribble"
-
     /// The app's store. Opening it creates the file and brings its schema up
     /// to date; only the app does that, never an extension.
     static let store: TranscriptStore = {
@@ -22,27 +20,7 @@ enum SharedLibrary {
         return store
     }()
 
-    nonisolated static func databaseURL() -> URL {
-        // Tests are hosted by the app. They must never open the real library.
-        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
-            let dir = FileManager.default.temporaryDirectory
-                .appendingPathComponent("shhhcribble-tests-\(ProcessInfo.processInfo.processIdentifier)", isDirectory: true)
-            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-            return dir.appendingPathComponent("library.sqlite")
-        }
-        let fm = FileManager.default
-        let base = fm.containerURL(forSecurityApplicationGroupIdentifier: appGroup)
-            ?? fm.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        let dir = base.appendingPathComponent("Library/Shhhcribble", isDirectory: true)
-        // Readable after the first unlock since boot, so the widget can show
-        // tasks on a locked phone. New files in the folder inherit this.
-        try? fm.createDirectory(
-            at: dir,
-            withIntermediateDirectories: true,
-            attributes: [.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication]
-        )
-        return dir.appendingPathComponent("library.sqlite")
-    }
+    nonisolated static func databaseURL() -> URL { LibraryLocation.databaseURL() }
 }
 
 /// Notes kept in the shared library (`ShhhcribbleCore`), the same store the

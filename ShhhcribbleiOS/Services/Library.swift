@@ -64,6 +64,8 @@ enum TriggerSource: String, Codable, Sendable {
     case shortcut
     /// Transcribed from an audio file, not the microphone.
     case file
+    /// Started from the record button on the home-screen widget.
+    case widget
 }
 
 /// Storage behind the library. Implementations are free to be slow on

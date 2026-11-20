@@ -17,11 +17,14 @@ Three looks of D. Not picked whole. Hendri's feedback, from two canvas comments 
 - A header like Reminders: a big count with "To do" under it, and a round button top right that opens the app, carrying the logo.
 - The round record button of look 3, with no label under it, on the right for reach.
 
-## Drafts 2 (2026-11-20), waiting for a pick
-On the canvas page "? Review". All three carry the feedback above and use the logo's violet (#5548E0 light, #A99DFF dark) in place of the app's old blue.
+## Drafts 2 (2026-11-20): B picked
+Hendri picked B, ticks on the right, over the suggested A. On the canvas page "Approved · to build"; the whole round is on "Explorations". All three carry the feedback above and use the logo's violet (#5548E0 light, #A99DFF dark) in place of the app's old blue.
 - A. As asked (suggested): ticks on the left. 6 task rows under the tall header.
 - B. Ticks on the right, in one tap column with the logo and record buttons.
 - C. Compact header, count and label on one line. 7 rows.
+
+## Built (2026-11-20), simulator only
+`ShhhcribbleWidget/HomeWidgets.swift`. Checked in the iOS 27 simulator in light mode: both widgets on a home-screen page with real data, a tick from the widget (count 4 to 3, the row written with its done time), the record button opening the app into a recording. Not checked: dark mode, the tinted and clear home-screen styles, a locked phone, a real device.
 
 ## References (Mobbin, 2026-11-20)
 - Perplexity's widgets: logo on top, a short list, actions at the bottom.
@@ -36,11 +39,12 @@ On the canvas page "? Review". All three carry the feedback above and use the lo
 - The record button opens the app to record. A widget cannot use the microphone.
 
 ## What the code must match
-- The approved board `approved/D-capture.dc.html` for structure, until the drafts round replaces it.
+- The approved boards `approved/B-ticks-right-light.dc.html` and `-dark`: header with count, "To do" and the logo button; six rows, tick on the right; latest note left, 64 pt round record button right, no label.
 - The medium widget reads the latest note through the shared store's light reader, never the full library.
 
 ## Open
-- The pick from drafts 2. The empty states are redrawn after it.
+- The empty states in the look of B (drawn in code first, shown to Hendri in the simulator).
+- The logo in the button is a redrawn scribble. No vector of the real logo exists in `brands/shhhcribble/assets/logo` yet.
 - The app itself still uses blue as its accent; the logo is violet. Moving the app to violet is a separate, small change.
 - Lock screen and StandBy versions.
 

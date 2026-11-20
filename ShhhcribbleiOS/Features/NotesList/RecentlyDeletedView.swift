@@ -71,6 +71,7 @@ struct RecentlyDeletedView: View {
                     .disabled(library.trashed.isEmpty)
                     Spacer()
                     Button("Delete All Now", role: .destructive) { confirmEmpty = true }
+                        .foregroundStyle(library.trashed.isEmpty ? Color.secondary : Color(.systemRed))
                         .disabled(library.trashed.isEmpty)
                 }
             }

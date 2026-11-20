@@ -8,6 +8,9 @@ struct NotesListView: View {
     @State private var searchText: String = ""
     @State private var selectedTags: Set<String> = []
     @State private var showFileImporter = false
+    /// Select mode: tapping a note picks it instead of opening it.
+    @State private var selecting = false
+    @State private var picked: Set<UUID> = []
 
     private var allTags: [String] { library.allTags }
 
@@ -31,25 +34,37 @@ struct NotesListView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text("Notes")
-                        .font(.system(size: 32, weight: .bold))
-                    Spacer()
-                    Button {
-                        showFileImporter = true
-                    } label: {
-                        Image(systemName: "square.and.arrow.down")
-                            .font(.system(size: 18, weight: .semibold))
-                            .frame(width: 44, height: 44)
+                if selecting {
+                    selectHeader
+                } else {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text("Notes")
+                            .font(.system(size: 32, weight: .bold))
+                        Spacer()
+                        Button {
+                            showFileImporter = true
+                        } label: {
+                            Image(systemName: "square.and.arrow.down")
+                                .font(.system(size: 18, weight: .semibold))
+                                .frame(width: 44, height: 44)
+                        }
+                        .accessibilityLabel("Import audio file")
+                        // No delete-all in the header (Hendri, 2026-11-20): it
+                        // sat beside an everyday button and wiped every note.
+                        // Deleting several goes through Select.
+                        if !notes.isEmpty {
+                            Button("Select") {
+                                picked = []
+                                selecting = true
+                            }
+                            .font(.system(size: 17, weight: .semibold))
+                            .frame(minWidth: 44, minHeight: 44)
+                        }
                     }
-                    .accessibilityLabel("Import audio file")
-                    // No delete-all in the header (Hendri, 2026-11-20): it sat
-                    // beside an everyday button and wiped every note. Deleting
-                    // several comes back through Select, with Recently Deleted.
+                    .padding(.horizontal, 20)
+                    .padding(.top, 12)
+                    .padding(.bottom, 8)
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 12)
-                .padding(.bottom, 8)
 
                 if !notes.isEmpty {
                     SearchBar(text: $searchText)
@@ -66,6 +81,10 @@ struct NotesListView: View {
                 }
 
                 if notes.isEmpty {
+                    if !library.trashed.isEmpty {
+                        RecentlyDeletedLink(count: library.trashed.count)
+                            .padding(.horizontal, 16)
+                    }
                     Spacer()
                     ContentUnavailableView(
                         "No notes yet",
@@ -79,11 +98,28 @@ struct NotesListView: View {
                     Spacer()
                 } else {
                     List {
-                        ForEach(filteredNotes) { note in
-                            NavigationLink(value: note.id) {
-                                NoteRow(note: note,
-                                        onCopy: { copy(note) },
-                                        onDelete: { delete(note) })
+                        // At the top, not the end: with a long list the end is
+                        // never seen (Hendri, 2026-11-20). Only while the bin
+                        // holds something.
+                        if !library.trashed.isEmpty && !selecting {
+                            Section {
+                                RecentlyDeletedLink(count: library.trashed.count, inList: true)
+                            }
+                        }
+                        Section {
+                            ForEach(filteredNotes) { note in
+                                if selecting {
+                                    SelectableRow(note: note, picked: picked.contains(note.id)) {
+                                        if picked.contains(note.id) { picked.remove(note.id) }
+                                        else { picked.insert(note.id) }
+                                    }
+                                } else {
+                                    NavigationLink(value: note.id) {
+                                        NoteRow(note: note,
+                                                onCopy: { copy(note) },
+                                                onDelete: { delete(note) })
+                                    }
+                                }
                             }
                         }
                     }
@@ -106,6 +142,42 @@ struct NotesListView: View {
     private func copy(_ note: LibraryNote) {
         UIPasteboard.general.string = note.transcript
         ToastManager.shared.show("Copied to clipboard", systemImage: "doc.on.doc.fill")
+    }
+
+    private var selectHeader: some View {
+        let all = filteredNotes.map(\.id)
+        let allPicked = !all.isEmpty && Set(all).isSubset(of: picked)
+        return HStack {
+            Button(allPicked ? "Select None" : "Select All") {
+                picked = allPicked ? [] : Set(all)
+            }
+            .frame(minHeight: 44)
+            Spacer()
+            Button(role: .destructive) {
+                let ids = Array(picked)
+                library.delete(ids: ids)
+                selecting = false
+                picked = []
+                Self.offerUndo(count: ids.count)
+            } label: {
+                Label(picked.isEmpty ? "Delete" : "Delete \(picked.count)", systemImage: "trash")
+                    .labelStyle(.titleAndIcon)
+            }
+            .foregroundStyle(picked.isEmpty ? Color.secondary : Color(.systemRed))
+            .disabled(picked.isEmpty)
+            .frame(minHeight: 44)
+            Spacer()
+            Button("Done") {
+                selecting = false
+                picked = []
+            }
+            .fontWeight(.semibold)
+            .frame(minHeight: 44)
+        }
+        .font(.system(size: 17))
+        .padding(.horizontal, 20)
+        .padding(.top, 12)
+        .padding(.bottom, 8)
     }
 
     private func delete(_ note: LibraryNote) {
@@ -253,5 +325,77 @@ private struct NoteRow: View {
                 Label("Delete", systemImage: "trash")
             }
         }
+    }
+}
+
+/// Opens Recently Deleted. Sits at the top of the notes list while the bin
+/// holds anything.
+private struct RecentlyDeletedLink: View {
+    let count: Int
+    var inList = false
+
+    var body: some View {
+        let row = Button {
+            AppRouter.shared.showingBin = true
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: "trash")
+                    .foregroundStyle(.secondary)
+                Text("Recently Deleted")
+                    .foregroundStyle(.primary)
+                Spacer()
+                Text("\(count)")
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Recently Deleted, \(count) \(count == 1 ? "note" : "notes")")
+
+        if inList {
+            row
+        } else {
+            row
+                .padding(.horizontal, 16)
+                .background(Color(.secondarySystemGroupedBackground),
+                            in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }
+    }
+}
+
+/// A note in Select mode: a tick circle and the text. Picked shows a filled
+/// circle with a tick, never colour alone.
+private struct SelectableRow: View {
+    let note: LibraryNote
+    let picked: Bool
+    let toggle: () -> Void
+
+    var body: some View {
+        Button(action: toggle) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: picked ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 22))
+                    .foregroundStyle(picked ? Color.accentColor : .secondary)
+                    .frame(width: 28)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(note.transcript)
+                        .foregroundStyle(.primary)
+                        .lineLimit(3)
+                    Text(note.createdAt.formatted(date: .abbreviated, time: .shortened))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(picked ? .isSelected : [])
     }
 }

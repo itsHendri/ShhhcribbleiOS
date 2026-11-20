@@ -80,4 +80,17 @@ final class LibraryTests: XCTestCase {
         XCTAssertEqual(library.undoLastDelete(), 2)
         XCTAssertEqual(library.notes.count, 2)
     }
+
+    func testDeletingSeveralIsOneUndo() {
+        let library = makeLibrary()
+        let a = UUID(), b = UUID(), c = UUID()
+        for (id, t) in [(a, "A"), (b, "B"), (c, "C")] {
+            library.insert(transcript: t, duration: 1, trigger: .manual, id: id)
+        }
+        library.delete(ids: [a, c])
+        XCTAssertEqual(library.notes.map(\.id), [b])
+        XCTAssertEqual(library.trashed.count, 2)
+        XCTAssertEqual(library.undoLastDelete(), 2)
+        XCTAssertEqual(library.notes.count, 3)
+    }
 }

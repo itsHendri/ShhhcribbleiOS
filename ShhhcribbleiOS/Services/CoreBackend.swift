@@ -114,7 +114,12 @@ final class CoreBackend: LibraryBackend {
     }
 
     func deleteAll() {
-        lastDeleted = store.notes.filter { !$0.isTask }.map(\.id)
+        delete(ids: store.notes.filter { !$0.isTask }.map(\.id))
+    }
+
+    func delete(ids: [UUID]) {
+        let live = Set(store.notes.map(\.id))
+        lastDeleted = ids.filter { live.contains($0) }
         for id in lastDeleted { store.trashNote(id: id) }
     }
 

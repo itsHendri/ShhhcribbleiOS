@@ -82,6 +82,9 @@ protocol LibraryBackend {
     func delete(id: UUID)
     /// Moves every note (not tasks) to Recently Deleted.
     func deleteAll()
+    /// Moves these notes to Recently Deleted as one step, so one Undo
+    /// brings them all back.
+    func delete(ids: [UUID])
     /// Takes back what the last `delete` or `deleteAll` binned. Returns how
     /// many notes came back. A later delete replaces what can be undone.
     func undoLastDelete() -> Int
@@ -235,6 +238,13 @@ final class Library: ObservableObject {
         backend.deleteAll()
         reload()
     }
+
+    func delete(ids: [UUID]) {
+        let set = Set(ids)
+        notes.removeAll { set.contains($0.id) }
+        backend.delete(ids: ids)
+        reload()
+    }
 }
 
 /// Keeps notes in memory only. Used by tests.
@@ -268,6 +278,11 @@ final class InMemoryBackend: LibraryBackend {
 
     func deleteAll() {
         lastDeleted = Array(stored.keys)
+        for id in lastDeleted { bin(id) }
+    }
+
+    func delete(ids: [UUID]) {
+        lastDeleted = ids.filter { stored[$0] != nil }
         for id in lastDeleted { bin(id) }
     }
 

@@ -110,7 +110,13 @@ enum WidgetData {
             return TasksEntry(date: now, usable: false, openCount: 0, tasks: [])
         }
         let startOfToday = calendar.startOfDay(for: now)
-        let tasks = reader.openTasks(limit: rows).map { note in
+        // The same order as the Tasks tab and the Mac (the core's
+        // TaskSections: overdue, today, upcoming by time, then undated newest
+        // first). The reader's own order puts undated oldest first, so read
+        // a generous batch and sort it here.
+        let sections = TaskSections.sections(of: reader.openTasks(limit: 200), now: now, calendar: calendar)
+        let ordered = sections.overdue + sections.today + sections.upcoming + sections.noDate
+        let tasks = ordered.prefix(rows).map { note in
             let overdue = note.dueAt.map { $0 < startOfToday } ?? false
             return WidgetTask(
                 id: note.id,

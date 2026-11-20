@@ -141,32 +141,42 @@ final class ReminderScheduler: NSObject {
 }
 
 extension ReminderScheduler: UNUserNotificationCenterDelegate {
+    // The completion-handler forms, on purpose. With the `async` forms the
+    // system's completion runs off the main thread, and UIKit then aborts
+    // the app the moment an alert's button is tapped (seen 2026-11-20).
+
     /// Show the alert even while the app is open.
     nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter,
-        willPresent notification: UNNotification
-    ) async -> UNNotificationPresentationOptions {
-        [.banner, .list, .sound]
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .list, .sound])
     }
 
     nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter,
-        didReceive response: UNNotificationResponse
-    ) async {
-        guard response.notification.request.content.categoryIdentifier == Self.category,
-              let id = UUID(uuidString: response.notification.request.identifier) else { return }
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        let content = response.notification.request.content
+        let id = content.categoryIdentifier == Self.category
+            ? UUID(uuidString: response.notification.request.identifier) : nil
         let action = response.actionIdentifier
-        await MainActor.run {
-            switch action {
-            case Self.doneAction:
-                TaskList.shared.complete(id: id)
-            case Self.snoozeAction:
-                TaskList.shared.snooze(id: id)
-            case UNNotificationDefaultActionIdentifier:
-                AppRouter.shared.tab = .tasks
-            default:
-                break
+        DispatchQueue.main.async {
+            if let id {
+                switch action {
+                case Self.doneAction:
+                    TaskList.shared.complete(id: id)
+                case Self.snoozeAction:
+                    TaskList.shared.snooze(id: id)
+                case UNNotificationDefaultActionIdentifier:
+                    AppRouter.shared.tab = .tasks
+                default:
+                    break
+                }
             }
+            completionHandler()
         }
     }
 }

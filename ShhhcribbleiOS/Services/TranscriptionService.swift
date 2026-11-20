@@ -159,6 +159,8 @@ actor TranscriptionService {
     private var streamContinuation: AsyncStream<AVAudioPCMBuffer>.Continuation?
     private var lastPartial = ""
     private var tdtBuffers: [AVAudioPCMBuffer] = []
+    /// Whether this recording held any sound worth transcribing.
+    private var silenceGate = SilenceGate()
 
     private var finishContinuation: CheckedContinuation<String, Never>?
 
@@ -293,6 +295,18 @@ actor TranscriptionService {
         await TranscriptionStatus.shared.event("Drained buffers")
 
         var text = ""
+        let heard = silenceGate.heardSpeech
+        await TranscriptionStatus.shared.event(String(
+            format: "Silence gate: floor %.4f, peak %.4f, loud %.2f of %.1f s, %@",
+            silenceGate.floorRMS, silenceGate.peakRMS, silenceGate.loudSeconds, silenceGate.seconds,
+            heard ? "transcribing" : "no speech"))
+        #if DEBUG
+        // Read back from the device's preferences when tuning the gate.
+        UserDefaults.standard.set([
+            "floor": Double(silenceGate.floorRMS), "peak": Double(silenceGate.peakRMS),
+            "loud": silenceGate.loudSeconds, "seconds": silenceGate.seconds, "heard": heard,
+        ], forKey: "debugLastSilenceGate")
+        #endif
         switch loadedMode {
         case .streaming:
             if let m = streamingManager {
@@ -300,7 +314,7 @@ actor TranscriptionService {
             }
             if text.isEmpty { text = lastPartial }
         case .tdt:
-            if let m = tdtManager, !tdtBuffers.isEmpty {
+            if heard, let m = tdtManager, !tdtBuffers.isEmpty {
                 await TranscriptionStatus.shared.event("TDT transcribing \(tdtBuffers.count) buffers…")
                 if let merged = Self.concatenate(buffers: tdtBuffers) {
                     var decoderState = TdtDecoderState.make()
@@ -315,6 +329,9 @@ actor TranscriptionService {
         case .none:
             break
         }
+        // The streaming engine still has to be finished above, but what it
+        // made of room noise is not kept.
+        if !heard { text = "" }
         await TranscriptionStatus.shared.event("Finish returned: \"\(text.prefix(200))\"")
 
         resumeFinish(text)
@@ -529,6 +546,7 @@ actor TranscriptionService {
         cancelled = false
         lastPartial = ""
         tdtBuffers.removeAll(keepingCapacity: true)
+        silenceGate.reset()
         tdtLastLiveAt = nil
         recordingStartedAt = Date()
         currentTrigger = trigger
@@ -655,6 +673,7 @@ actor TranscriptionService {
             }
             let feed = Task.detached {
                 for await buffer in buffers {
+                    await TranscriptionService.shared.observeLevel(buffer)
                     do {
                         _ = try await manager.process(audioBuffer: buffer)
                     } catch {
@@ -752,6 +771,8 @@ actor TranscriptionService {
     private func tdtLiveTranscribe() async {
         guard !stopRequested, !tdtLiveRunning, let m = tdtManager else { return }
         guard !tdtBuffers.isEmpty else { return }
+        // Room noise alone would give a phantom word on screen.
+        guard silenceGate.heardSpeech else { return }
         tdtLiveRunning = true
         defer { tdtLiveRunning = false }
 
@@ -782,11 +803,16 @@ actor TranscriptionService {
         }
     }
 
+    private func observeLevel(_ buffer: AVAudioPCMBuffer) {
+        silenceGate.observe(buffer)
+    }
+
     private func appendTdtBuffer(_ buffer: AVAudioPCMBuffer) {
         // Copy the buffer — the tap reuses backing storage, so holding the
         // original reference would mutate under us.
         guard let copy = Self.copy(buffer: buffer) else { return }
         tdtBuffers.append(copy)
+        silenceGate.observe(copy)
 
         // Event-driven trigger: whenever fresh audio lands and enough time
         // has elapsed since the last transcribe, kick one off. This catches

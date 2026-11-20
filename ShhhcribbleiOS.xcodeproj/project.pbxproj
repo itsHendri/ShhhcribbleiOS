@@ -21,6 +21,7 @@
 		4050373D87196A7B164DCD59 /* ReminderScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A0848997C55077B0D411AC /* ReminderScheduler.swift */; };
 		449D3DECD0879BF20B1B95B4 /* LibraryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A5BFA296AA0DC29261CDAAE /* LibraryTests.swift */; };
 		46113773862C1B8C29CDC1A0 /* Tasks.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCA1296BE0BC4DC32DDE96D0 /* Tasks.swift */; };
+		567F28A2D25446031C3443A4 /* SilenceGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7F900040047335FB601FF83 /* SilenceGate.swift */; };
 		5901C59704D171D0F5014BAF /* AudioSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8251392958D48F0A74CFEA33 /* AudioSessionManager.swift */; };
 		5C09F93FEB042D216EA310B5 /* RecordingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9B54907BD89721546007451 /* RecordingView.swift */; };
 		6031DE1E90E080A56490D210 /* CancelRecordingIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEDBF7C3A2E0ADE0D14B7EFE /* CancelRecordingIntent.swift */; };
@@ -37,6 +38,7 @@
 		8BABE71CB500B03E180CD138 /* ShhhcribbleShared.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 501ECF7681F569DB6FCE892B /* ShhhcribbleShared.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		8DB2514900940BDCD6CD53C8 /* ShhhcribbleLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2015BF4BDACAAEAB1ADBEDA0 /* ShhhcribbleLiveActivity.swift */; };
 		93CF5A5E042AF5427B02C654 /* AudioInterruptionObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 553D8890C795CDE235977EFD /* AudioInterruptionObserver.swift */; };
+		971A4D7A8EA9590A036D296B /* SilenceGateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F9811F707DC561D47A61325 /* SilenceGateTests.swift */; };
 		9DDE601FC10439667FD0C59B /* FillerWordsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7EE9617C3C7A0932795E033 /* FillerWordsView.swift */; };
 		9EFAF67BE51080CCCD959FB8 /* TextFinisher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A58F8D479E8D0134E3BC0EC /* TextFinisher.swift */; };
 		A34BE92C1077B639BD944D11 /* ShhhcribbleCore in Frameworks */ = {isa = PBXBuildFile; productRef = 8F2ABC4CA92C783F3F338B8C /* ShhhcribbleCore */; };
@@ -146,6 +148,7 @@
 		7766BF4AAD7592808E3BDDEB /* Vocabulary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Vocabulary.swift; sourceTree = "<group>"; };
 		7A58F8D479E8D0134E3BC0EC /* TextFinisher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextFinisher.swift; sourceTree = "<group>"; };
 		7E35F65B3A78E3990E7794AE /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		7F9811F707DC561D47A61325 /* SilenceGateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SilenceGateTests.swift; sourceTree = "<group>"; };
 		8251392958D48F0A74CFEA33 /* AudioSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSessionManager.swift; sourceTree = "<group>"; };
 		85103E7E6F47861A98A85AF8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		8825A2B0AA1C8E60DA3A31BB /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -158,6 +161,7 @@
 		BCA1296BE0BC4DC32DDE96D0 /* Tasks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tasks.swift; sourceTree = "<group>"; };
 		BF5EFD8AD8054C11CF78538B /* CoreBackend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreBackend.swift; sourceTree = "<group>"; };
 		BF932B842F1D3FF7670E760F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		C7F900040047335FB601FF83 /* SilenceGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SilenceGate.swift; sourceTree = "<group>"; };
 		CCAD0BDCCEE9197686C02B83 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		D26455BBCF1C20CF583B6BD4 /* FileTranscriptionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileTranscriptionTests.swift; sourceTree = "<group>"; };
 		D7EE9617C3C7A0932795E033 /* FillerWordsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FillerWordsView.swift; sourceTree = "<group>"; };
@@ -364,6 +368,7 @@
 				525778296A3663BEE89A4D64 /* LibraryLocation.swift */,
 				29A0848997C55077B0D411AC /* ReminderScheduler.swift */,
 				1DD50CC8335662AB2606C4D2 /* ShhhcribbleActivityManager.swift */,
+				C7F900040047335FB601FF83 /* SilenceGate.swift */,
 				BCA1296BE0BC4DC32DDE96D0 /* Tasks.swift */,
 				7A58F8D479E8D0134E3BC0EC /* TextFinisher.swift */,
 				3641C5BDC999F0CE55ED22CB /* TranscriptionService.swift */,
@@ -378,6 +383,7 @@
 				0A2A8E7D2241A966A18CBDC0 /* CoreBackendTests.swift */,
 				D26455BBCF1C20CF583B6BD4 /* FileTranscriptionTests.swift */,
 				3A5BFA296AA0DC29261CDAAE /* LibraryTests.swift */,
+				7F9811F707DC561D47A61325 /* SilenceGateTests.swift */,
 				5B74067F044B1E195E1EC17D /* TasksTests.swift */,
 				D99D9251ADAC9947CEE9B135 /* TextPipelineTests.swift */,
 				64CB603DED75416DDF9B08A4 /* Fixtures */,
@@ -577,6 +583,7 @@
 				614D028097F097C7520A4A35 /* CoreBackendTests.swift in Sources */,
 				C958FCE66DBCF730C6AFAB1A /* FileTranscriptionTests.swift in Sources */,
 				449D3DECD0879BF20B1B95B4 /* LibraryTests.swift in Sources */,
+				971A4D7A8EA9590A036D296B /* SilenceGateTests.swift in Sources */,
 				F43C44C71BC3E83F2B59343D /* TasksTests.swift in Sources */,
 				2E64B379D208871C93E008E9 /* TextPipelineTests.swift in Sources */,
 			);
@@ -629,6 +636,7 @@
 				0DD1EB5203E3565C4328AA54 /* ShhhcribbleActivityManager.swift in Sources */,
 				AE47FFD5C0433E6E197097D1 /* ShhhcribbleApp.swift in Sources */,
 				DE0F38109584DB8B63DE3D06 /* ShhhcribbleShortcuts.swift in Sources */,
+				567F28A2D25446031C3443A4 /* SilenceGate.swift in Sources */,
 				05C4764EDF8D8245F48C899B /* StartRecordingIntent.swift in Sources */,
 				3E908E5AFC9334B562802178 /* StopRecordingIntent.swift in Sources */,
 				239F705F50711D4DFD4AF893 /* String+Filters.swift in Sources */,

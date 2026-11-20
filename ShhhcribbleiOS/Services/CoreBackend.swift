@@ -45,7 +45,9 @@ final class CoreBackend: LibraryBackend {
     }
 
     func all() -> [LibraryNote] {
-        store.notes.filter { !$0.isTask }.map(Self.libraryNote)
+        // The core's shelf: notes, not tasks, and not meetings still waiting
+        // for a yes on the Mac.
+        store.shelfNotes.map(Self.libraryNote)
     }
 
     func insert(_ note: LibraryNote) -> Bool {

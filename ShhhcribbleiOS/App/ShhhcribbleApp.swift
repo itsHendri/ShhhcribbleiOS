@@ -14,6 +14,10 @@ struct ShhhcribbleApp: App {
     init() {
         AudioSessionManager.shared.configure()
         AudioInterruptionObserver.shared.start()
+        // Before launch finishes, so a tapped alert that started the app is
+        // delivered. Reading the task list brings the alerts in step.
+        ReminderScheduler.shared.configure()
+        _ = TaskList.shared
         StopRecordingIntent.performer = {
             await TranscriptionService.shared.stopRecording()
         }

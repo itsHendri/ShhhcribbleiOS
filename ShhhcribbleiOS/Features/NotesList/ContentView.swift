@@ -10,25 +10,35 @@ final class NoteFocus: ObservableObject {
     private init() {}
 }
 
+/// Which tab is showing. Shared so an alert tap can open Tasks.
+@MainActor
+final class AppRouter: ObservableObject {
+    static let shared = AppRouter()
+    @Published var tab: ContentView.BottomTab = .notes
+    private init() {}
+}
+
 struct ContentView: View {
-    enum BottomTab { case notes, settings }
+    enum BottomTab { case notes, tasks, settings }
 
     @StateObject private var status = TranscriptionStatus.shared
     @StateObject private var noteFocus = NoteFocus.shared
-    @State private var tab: BottomTab = .notes
+    @ObservedObject private var router = AppRouter.shared
+    private var tab: BottomTab { router.tab }
 
     var body: some View {
         ZStack(alignment: .bottom) {
             Group {
                 switch tab {
                 case .notes:    NotesListView()
+                case .tasks:    TasksView()
                 case .settings: SettingsView()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             HStack(spacing: 0) {
-                TabPill(tab: $tab)
+                TabPill(tab: $router.tab)
                 Spacer()
                 if !status.isRecording {
                     HStack(spacing: 10) {
@@ -66,6 +76,7 @@ private struct TabPill: View {
     var body: some View {
         HStack(spacing: 0) {
             item(.notes, label: "Notes", icon: "note.text")
+            item(.tasks, label: "Tasks", icon: "checklist")
             item(.settings, label: "Settings", icon: "gearshape")
         }
         .padding(6)
@@ -87,7 +98,7 @@ private struct TabPill: View {
                     .font(.system(size: 11, weight: .medium))
             }
             .foregroundStyle(selected ? Color(red: 0.25, green: 0.55, blue: 1.0) : .primary)
-            .frame(width: 78, height: 52)
+            .frame(width: 70, height: 52)
             .background {
                 if selected {
                     Capsule()
@@ -231,7 +242,13 @@ final class ToastManager: ObservableObject {
         let id = UUID()
         let message: String
         let systemImage: String
+        /// An optional button on the toast, such as Undo.
+        var actionLabel: String? = nil
+
+        static func == (a: Toast, b: Toast) -> Bool { a.id == b.id }
     }
+
+    private var action: (() -> Void)?
 
     @Published private(set) var current: Toast?
 
@@ -239,10 +256,24 @@ final class ToastManager: ObservableObject {
 
     private init() {}
 
-    func show(_ message: String, systemImage: String = "checkmark.circle.fill",
-              duration: TimeInterval = 1.8) {
+    /// Runs the current toast's button and puts the toast away.
+    func runAction() {
+        let run = action
+        action = nil
         dismissTask?.cancel()
-        let toast = Toast(message: message, systemImage: systemImage)
+        withAnimation(.easeIn(duration: 0.2)) { current = nil }
+        run?()
+    }
+
+    /// With `actionLabel` the toast carries a button and stays long enough
+    /// to reach it.
+    func show(_ message: String, systemImage: String = "checkmark.circle.fill",
+              duration: TimeInterval = 1.8,
+              actionLabel: String? = nil, action: (() -> Void)? = nil) {
+        dismissTask?.cancel()
+        self.action = action
+        let duration = actionLabel == nil ? duration : max(duration, 6)
+        let toast = Toast(message: message, systemImage: systemImage, actionLabel: actionLabel)
         withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) {
             current = toast
         }
@@ -272,9 +303,15 @@ struct ToastOverlay: View {
                     Text(toast.message)
                         .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(.primary)
+                    if let label = toast.actionLabel {
+                        Button(label) { manager.runAction() }
+                            .font(.system(size: 14, weight: .bold))
+                            .frame(minWidth: 44, minHeight: 44)
+                            .contentShape(Rectangle())
+                    }
                 }
                 .padding(.horizontal, 16)
-                .padding(.vertical, 12)
+                .padding(.vertical, toast.actionLabel == nil ? 12 : 0)
                 .background(Capsule().fill(.regularMaterial))
                 .overlay(Capsule().strokeBorder(.white.opacity(0.06), lineWidth: 0.5))
                 .shadow(color: .black.opacity(0.22), radius: 14, y: 6)
@@ -285,6 +322,7 @@ struct ToastOverlay: View {
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .allowsHitTesting(false)
+        // Only a toast with a button takes touches.
+        .allowsHitTesting(manager.current?.actionLabel != nil)
     }
 }

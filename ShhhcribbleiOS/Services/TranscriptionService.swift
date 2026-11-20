@@ -1,3 +1,4 @@
+import ShhhcribbleCore
 import AVFoundation
 import Combine
 import CoreML
@@ -852,6 +853,22 @@ actor TranscriptionService {
         if let id = appendingTo {
             Library.shared.append(transcript: text, to: id)
             ToastManager.shared.show("Added to note", systemImage: "text.append")
+        } else if case .task(let body, let due, let allDay) =
+                    SpokenIntent.parse(text, now: Date(), calendar: .current) {
+            // "Reminder, ..." or "To-do, ...": a task at once, with one tap
+            // to turn it back into the note it was spoken as.
+            let id = TaskList.shared.add(
+                text: body, dueAt: due, allDay: allDay,
+                spokenText: raw, trigger: trigger, duration: duration
+            )
+            let when = due.map { " · " + DueLabel.text(for: $0, allDay: allDay) } ?? ""
+            ToastManager.shared.show(
+                (due == nil ? "To-do added" : "Reminder set") + when,
+                systemImage: due == nil ? "checklist" : "bell.fill",
+                actionLabel: "Undo"
+            ) {
+                TaskList.shared.makePlainNote(id: id, text: text)
+            }
         } else {
             Library.shared.insert(
                 transcript: text,

@@ -97,6 +97,8 @@ targets:
       properties:
         com.apple.security.application-groups:
           - group.com.shhhcribble
+        # Reminders may break through a Focus, as Apple Reminders does.
+        com.apple.developer.usernotifications.time-sensitive: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.shhhcribble.ios

@@ -56,6 +56,12 @@ final class AudioRecorder {
         }
         engine.inputNode.removeTap(onBus: 0)
         engine.stop()
+        // Hand audio back. A record-only session pauses whatever was
+        // playing (Spotify, Music); without this they are never told they
+        // may resume. After the engine has stopped, never before: releasing
+        // the session under a running engine fails. Stop and Cancel both
+        // come through here. The mid-recording route rebuild does not.
+        AudioSessionManager.shared.deactivate()
         isRunning = false
         onBuffer = nil
         onLevel = nil

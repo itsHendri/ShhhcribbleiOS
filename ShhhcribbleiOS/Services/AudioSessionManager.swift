@@ -13,6 +13,10 @@ final class AudioSessionManager {
             // setActive(true) silently fails to take ownership of the mic
             // and the engine captures no audio.
             try? session.setActive(false, options: .notifyOthersOnDeactivation)
+            // Record-only always pauses other apps' audio; `.duckOthers`
+            // has no effect in this category. `AudioRecorder.stop()` hands
+            // audio back so the music resumes (Hendri's choice, 2026-11-20:
+            // pause, then resume, not mixing).
             try session.setCategory(.record, mode: .measurement, options: .duckOthers)
         } catch {
             print("[Shhhcribble] AudioSession configure failed: \(error)")

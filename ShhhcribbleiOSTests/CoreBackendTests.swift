@@ -96,3 +96,46 @@ final class CoreBackendTests: XCTestCase {
         XCTAssertEqual(vocabulary.apply(to: "push font sake to github"), "push Fontsake to GitHub")
     }
 }
+
+@MainActor
+final class SummaryAndFinishTests: XCTestCase {
+
+    func testASummaryIsStoredWithoutCountingAsAnEdit() {
+        let store = TranscriptStore(path: ":memory:")
+        let library = Library(backend: CoreBackend(store: store))
+        let id = UUID()
+        library.insert(transcript: "We agreed I will send the invoice on Friday.", duration: 4, trigger: .manual, id: id,
+                       createdAt: Date(timeIntervalSince1970: 1_000))
+        let before = store.notes.first?.modifiedAt
+
+        library.saveSummary(
+            id: id, summary: "Invoice goes out Friday.",
+            items: [NoteActionItem(text: "Send the invoice", quote: "I will send the invoice on Friday", owner: "me")]
+        )
+
+        XCTAssertEqual(store.notes.first?.summary, "Invoice goes out Friday.")
+        XCTAssertEqual(store.notes.first?.actionItems.first?.quote, "I will send the invoice on Friday")
+        XCTAssertEqual(store.notes.first?.modifiedAt, before)
+        library.reload()
+        XCTAssertEqual(library.note(id: id)?.actionItems.map(\.text), ["Send the invoice"])
+        XCTAssertNotNil(library.note(id: id)?.summaryGeneratedAt)
+    }
+
+    func testWithCleanupOffTheDictionaryRunsThenTheFillerFilter() async {
+        let defaults = UserDefaults.standard
+        let old = defaults.object(forKey: TextFinisher.cleanupKey)
+        defaults.set(false, forKey: TextFinisher.cleanupKey)
+        defer { defaults.set(old, forKey: TextFinisher.cleanupKey) }
+        Vocabulary.shared.set([DictionaryEntry(phrase: "font sake", replacement: "Fontsake")])
+        defer { Vocabulary.shared.set([]) }
+
+        let finished = await TextFinisher.finish("  um, push font sake today  ")
+        XCTAssertEqual(finished.text, "push Fontsake today")
+        XCTAssertFalse(finished.cleaned)
+    }
+
+    func testNothingHeardStaysEmpty() async {
+        let finished = await TextFinisher.finish("   ")
+        XCTAssertEqual(finished.text, "")
+    }
+}

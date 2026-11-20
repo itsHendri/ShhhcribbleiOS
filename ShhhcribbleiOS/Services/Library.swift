@@ -13,6 +13,10 @@ struct LibraryNote: Identifiable, Hashable, Sendable {
     var duration: TimeInterval
     var trigger: TriggerSource
     var tags: [String]
+    /// Made on request by the on-device model. Nil until then.
+    var summary: String?
+    var actionItems: [NoteActionItem] = []
+    var summaryGeneratedAt: Date?
 
     init(
         id: UUID = UUID(),
@@ -35,6 +39,15 @@ struct LibraryNote: Identifiable, Hashable, Sendable {
     /// Taken from the first sentence, as on the Mac. Notes are shared, so
     /// the phone has no title of its own to edit.
     var title: String { transcript.autoTitle() }
+}
+
+/// Something a summary found to do, with the sentence it came from.
+struct NoteActionItem: Hashable, Sendable {
+    var text: String
+    /// The words in the note this item was taken from.
+    var quote: String
+    /// Who said they would do it, as the shared library spells it.
+    var owner: String
 }
 
 /// How a note came to exist.
@@ -63,6 +76,8 @@ protocol LibraryBackend {
     func update(_ note: LibraryNote)
     func delete(id: UUID)
     func deleteAll()
+    /// Stores a summary. Not an edit: the note keeps its modified time.
+    func saveSummary(id: UUID, summary: String, items: [NoteActionItem], at date: Date)
     /// Called when the stored notes changed by another hand: the widget, the
     /// Mac through sync, the recorder receiver. `Library` reads again.
     var onExternalChange: (() -> Void)? { get set }
@@ -151,6 +166,14 @@ final class Library: ObservableObject {
         backend.delete(id: id)
     }
 
+    func saveSummary(id: UUID, summary: String, items: [NoteActionItem], at date: Date = Date()) {
+        guard let index = notes.firstIndex(where: { $0.id == id }) else { return }
+        notes[index].summary = summary
+        notes[index].actionItems = items
+        notes[index].summaryGeneratedAt = date
+        backend.saveSummary(id: id, summary: summary, items: items, at: date)
+    }
+
     func deleteAll() {
         notes.removeAll()
         backend.deleteAll()
@@ -172,6 +195,11 @@ final class InMemoryBackend: LibraryBackend {
     }
 
     func update(_ note: LibraryNote) { stored[note.id] = note }
+    func saveSummary(id: UUID, summary: String, items: [NoteActionItem], at date: Date) {
+        stored[id]?.summary = summary
+        stored[id]?.actionItems = items
+        stored[id]?.summaryGeneratedAt = date
+    }
     func delete(id: UUID) { stored[id] = nil }
     func deleteAll() { stored.removeAll() }
 }

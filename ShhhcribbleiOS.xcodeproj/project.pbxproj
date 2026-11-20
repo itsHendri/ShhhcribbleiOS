@@ -37,6 +37,7 @@
 		8DB2514900940BDCD6CD53C8 /* ShhhcribbleLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2015BF4BDACAAEAB1ADBEDA0 /* ShhhcribbleLiveActivity.swift */; };
 		93CF5A5E042AF5427B02C654 /* AudioInterruptionObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 553D8890C795CDE235977EFD /* AudioInterruptionObserver.swift */; };
 		9DDE601FC10439667FD0C59B /* FillerWordsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7EE9617C3C7A0932795E033 /* FillerWordsView.swift */; };
+		9EFAF67BE51080CCCD959FB8 /* TextFinisher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A58F8D479E8D0134E3BC0EC /* TextFinisher.swift */; };
 		A34BE92C1077B639BD944D11 /* ShhhcribbleCore in Frameworks */ = {isa = PBXBuildFile; productRef = 8F2ABC4CA92C783F3F338B8C /* ShhhcribbleCore */; };
 		AE47FFD5C0433E6E197097D1 /* ShhhcribbleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A660C5D593C571BE20F2F69E /* ShhhcribbleApp.swift */; };
 		B2DC6A9E4BB42904174465C6 /* NoteDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 226236F0C41379F9E638673C /* NoteDetailView.swift */; };
@@ -138,6 +139,7 @@
 		6D583108174E01A3A8E7318A /* StopRecordingIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopRecordingIntent.swift; sourceTree = "<group>"; };
 		74C376704B9CE0B3B66626C6 /* spoken-clip.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "spoken-clip.wav"; sourceTree = "<group>"; };
 		7766BF4AAD7592808E3BDDEB /* Vocabulary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Vocabulary.swift; sourceTree = "<group>"; };
+		7A58F8D479E8D0134E3BC0EC /* TextFinisher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextFinisher.swift; sourceTree = "<group>"; };
 		7E35F65B3A78E3990E7794AE /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		8251392958D48F0A74CFEA33 /* AudioSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSessionManager.swift; sourceTree = "<group>"; };
 		85103E7E6F47861A98A85AF8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -354,6 +356,7 @@
 				29A0848997C55077B0D411AC /* ReminderScheduler.swift */,
 				1DD50CC8335662AB2606C4D2 /* ShhhcribbleActivityManager.swift */,
 				BCA1296BE0BC4DC32DDE96D0 /* Tasks.swift */,
+				7A58F8D479E8D0134E3BC0EC /* TextFinisher.swift */,
 				3641C5BDC999F0CE55ED22CB /* TranscriptionService.swift */,
 				7766BF4AAD7592808E3BDDEB /* Vocabulary.swift */,
 			);
@@ -621,6 +624,7 @@
 				F16617FBF0D0DBD61899D5D9 /* SubstitutionsView.swift in Sources */,
 				46113773862C1B8C29CDC1A0 /* Tasks.swift in Sources */,
 				EFC32E5B3D63A07771E66F73 /* TasksView.swift in Sources */,
+				9EFAF67BE51080CCCD959FB8 /* TextFinisher.swift in Sources */,
 				894BD64061A8B06DB088C20C /* TranscriptionService.swift in Sources */,
 				D106DEB93558EFE7642ED8F1 /* Vocabulary.swift in Sources */,
 			);

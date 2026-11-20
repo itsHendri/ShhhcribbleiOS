@@ -97,6 +97,17 @@ final class CoreBackend: LibraryBackend {
         store.deleteNote(id: id)
     }
 
+    func saveSummary(id: UUID, summary: String, items: [NoteActionItem], at date: Date) {
+        store.updateNoteSummary(
+            id: id,
+            summary: summary,
+            actionItems: items.map {
+                ActionItem(text: $0.text, owner: ActionItemOwner(rawValue: $0.owner) ?? .unassigned, quote: $0.quote)
+            },
+            generatedAt: date
+        )
+    }
+
     func deleteAll() {
         for note in store.notes where !note.isTask {
             store.deleteNote(id: note.id)
@@ -104,7 +115,7 @@ final class CoreBackend: LibraryBackend {
     }
 
     private static func libraryNote(_ row: Note) -> LibraryNote {
-        LibraryNote(
+        var note = LibraryNote(
             id: row.id,
             transcript: row.text,
             rawTranscript: row.rawText,
@@ -113,5 +124,11 @@ final class CoreBackend: LibraryBackend {
             trigger: row.originDetail.flatMap(TriggerSource.init(rawValue:)) ?? .manual,
             tags: row.tags
         )
+        note.summary = row.summary
+        note.actionItems = row.actionItems.map {
+            NoteActionItem(text: $0.text, quote: $0.quote, owner: $0.owner.rawValue)
+        }
+        note.summaryGeneratedAt = row.summaryGeneratedAt
+        return note
     }
 }

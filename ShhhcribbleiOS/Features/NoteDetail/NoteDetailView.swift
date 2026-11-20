@@ -47,6 +47,8 @@ struct NoteDetailView: View {
                     suggestions: library.allTags
                 )
 
+                SummaryBlock(note: note)
+
                 Divider()
 
                 if isEditing {
@@ -284,6 +286,86 @@ private struct FlowLayout: Layout {
             subview.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))
             x += size.width + spacing
             lineHeight = max(lineHeight, size.height)
+        }
+    }
+}
+
+/// The note's summary, or the button that makes one. Summaries are made on
+/// the phone by Apple's on-device model, and only when asked for.
+private struct SummaryBlock: View {
+    let note: LibraryNote
+    @ObservedObject private var summaries = Summaries.shared
+
+    private var working: Bool { summaries.working.contains(note.id) }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if let summary = note.summary, !summary.isEmpty {
+                Label("Summary", systemImage: "text.badge.star")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Text(summary)
+                    .font(.callout)
+                    .textSelection(.enabled)
+                if !note.actionItems.isEmpty {
+                    Label("To do", systemImage: "checklist")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .padding(.top, 2)
+                    ForEach(note.actionItems, id: \.self) { item in
+                        HStack(alignment: .top, spacing: 8) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(item.text).font(.callout)
+                                if !item.quote.isEmpty {
+                                    Text("\u{201C}" + item.quote + "\u{201D}")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                            Spacer(minLength: 0)
+                            Button {
+                                TaskList.shared.add(text: item.text)
+                                ToastManager.shared.show("Added to Tasks", systemImage: "checklist")
+                            } label: {
+                                Image(systemName: "plus.circle")
+                                    .font(.system(size: 20))
+                                    .frame(width: 44, height: 44)
+                            }
+                            .buttonStyle(.plain)
+                            .foregroundStyle(Color.accentColor)
+                            .accessibilityLabel("Add to Tasks: \(item.text)")
+                        }
+                    }
+                }
+            }
+
+            if working {
+                HStack(spacing: 8) {
+                    ProgressView()
+                    Text("Summarising on this iPhone…").font(.footnote).foregroundStyle(.secondary)
+                }
+                .frame(minHeight: 44)
+            } else if summaries.available {
+                Button {
+                    Task { await summaries.generate(for: note.id) }
+                } label: {
+                    Label(note.summary == nil ? "Summarise" : "Summarise again", systemImage: "sparkles")
+                        .font(.footnote.weight(.semibold))
+                        .frame(minHeight: 44)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Color.accentColor)
+                .disabled(note.transcript.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                if summaries.failed.contains(note.id) {
+                    Label("No summary came back. Try again.", systemImage: "exclamationmark.triangle")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            } else if note.summary == nil {
+                Label("Summaries need Apple Intelligence turned on in Settings.", systemImage: "sparkles.slash")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 }

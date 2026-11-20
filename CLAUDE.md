@@ -14,6 +14,8 @@ Read `../../docs/ECOSYSTEM.md` first. Where it and this file disagree, it wins.
 - Custom words and substitutions are entries in the shared dictionary (a custom word is an entry whose replacement is the phrase itself). Custom filler words stay in UserDefaults on the phone. The pref keys `customHotwords` and `substitutionRules` are read once, to move old values over.
 - Tasks are notes with `isTask` set. Views and services reach them only through `TaskList` (`Services/Tasks.swift`). A recording that starts with "Reminder", "Remind me" or "To-do" becomes a task at once (the core's `SpokenIntent`), with an Undo on the toast that turns it back into the note as spoken. "Meeting" is not routed on the phone yet.
 - Alerts are local notifications, one per open task with a due time ahead, the task id as the notification id (`Services/ReminderScheduler.swift`, rules in `ReminderPlan`). They are re-planned after every change to the stored notes, including changes from another process. Actions: Done, Snooze 10 minutes. Permission is asked when the first task with a time exists, not at launch.
+- The final text is made once, after Stop, by `TextFinisher` (`Services/TextFinisher.swift`): shared dictionary on the raw words, then the core's on-device cleanup (`TranscriptCleaner`, Apple's model, guarded) when the `cleanupEnabled` pref is on (default) and the model is available, then the filler filter. When cleanup is off, unavailable or rejected, dictionary then filler filter. Live partials never use the model. The raw words are kept in `rawText`.
+- Summaries are made only on request, from the note screen, by the core's `TranscriptSummarizer`, and stored on the note (`Library.saveSummary`). An action item can be added to Tasks with one tap.
 - Audio files become notes through `TranscriptionService.importAudioFile(_:id:)` (always Parakeet TDT v3, insert-if-absent by id). The recorder receiver will call the same function with the recording id.
 - Tests: `xcodebuild ... test` runs unit tests plus a real-model run on `ShhhcribbleiOSTests/Fixtures/spoken-clip.wav`. In debug builds, launching with `-ShhhTestClip <path>` feeds a clip in place of the microphone.
 - Parity rule (Hendri, 2026-11-20): the library is shared, so its features are too. The phone has no note field the Mac lacks. The separately editable title is dropped when the shared core is adopted; the title is derived from the first line, as on the Mac.
@@ -280,6 +282,7 @@ struct ShhhcribbleShortcuts: AppShortcutsProvider {
 |---|---|---|---|
 | `asrMode` | String (`AsrMode.rawValue`) | `"streaming"` | Engine choice: `streaming` (StreamingEouAsrManager) or `tdt` (Parakeet TDT v3 via AsrManager) |
 | `filterFillerWords` | Bool | `true` | Strip um/uh/hmm etc. |
+| `cleanupEnabled` | Bool | `true` | On-device cleanup after Stop (Apple's model, through the shared core) |
 | `customHotwords` | [String] | `[]` | Casing-rewrite list (NOT real engine biasing — see "Vocabulary pipeline" notes) |
 | `substitutionRules` | Data (JSON) | `{}` | Key-value find-replace dictionary |
 | `customFillerWords` | [String] | `[]` | User-added filler words |

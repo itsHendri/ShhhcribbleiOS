@@ -4,6 +4,7 @@ import UIKit
 
 struct SettingsView: View {
     @AppStorage("filterFillerWords") private var filterFillerWords = true
+    @AppStorage(TextFinisher.cleanupKey) private var cleanupEnabled = true
     @AppStorage("useANE") private var useANE = true
     @AppStorage("asrMode") private var asrModeRaw = AsrMode.streaming.rawValue
     // TODO: remove after onboarding QA — see plan silly-karp
@@ -31,6 +32,7 @@ struct SettingsView: View {
 
                 Form {
                     transcriptionStyleSection
+                    cleanupSection
                     vocabularySection
                     performanceSection
                     permissionsSection
@@ -73,6 +75,20 @@ struct SettingsView: View {
             Text("Transcription style")
         } footer: {
             Text("Streaming shows transcribed text live with the lowest latency, but without punctuation. Parakeet TDT v3 produces punctuated, capitalised text and is more CPU-intensive. Both run fully on-device.")
+        }
+    }
+
+    private var cleanupSection: some View {
+        Section {
+            Toggle("Clean up after recording", isOn: $cleanupEnabled)
+        } header: {
+            Text("Cleanup")
+        } footer: {
+            if TextFinisher.cleanupAvailable {
+                Text("After you stop, Apple's on-device model tidies the text: punctuation, false starts, repeated words. It runs on this iPhone, and a result that adds or drops content is thrown away. The words as heard are kept with the note.")
+            } else {
+                Label("Not available right now. Cleanup needs Apple Intelligence turned on in the Settings app. Until then only filler words are removed.", systemImage: "sparkles.slash")
+            }
         }
     }
 

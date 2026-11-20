@@ -414,9 +414,7 @@ actor TranscriptionService {
                 Double($0.length) / $0.processingFormat.sampleRate
             } ?? 0
             let raw = try await transcribeFile(at: url)
-            let filterOn = UserDefaults.standard.object(forKey: "filterFillerWords") as? Bool ?? true
-            let afterFiller = filterOn ? FillerWordFilter.filter(raw) : raw
-            let text = Vocabulary.shared.apply(to: afterFiller)
+            let text = await TextFinisher.finish(raw).text
             guard !text.isEmpty else {
                 await TranscriptionStatus.shared.event("File import: no speech")
                 await MainActor.run {
@@ -720,9 +718,11 @@ actor TranscriptionService {
             return
         }
 
-        let filterOn = UserDefaults.standard.object(forKey: "filterFillerWords") as? Bool ?? true
-        let afterFiller = filterOn ? FillerWordFilter.filter(transcript) : transcript
-        let filtered = Vocabulary.shared.apply(to: afterFiller)
+        // Dictionary, then on-device cleanup when it is on and available,
+        // else the filler filter. Once, on the final text only.
+        let finished = await TextFinisher.finish(transcript)
+        let filtered = finished.text
+        await TranscriptionStatus.shared.event(finished.cleaned ? "Cleaned up on device" : "Cleanup not used")
         guard !filtered.isEmpty else {
             await TranscriptionStatus.shared.event("Empty transcript — no speech detected")
             await MainActor.run {

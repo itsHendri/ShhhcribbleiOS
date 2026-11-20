@@ -1,5 +1,6 @@
 import ShhhcribbleShared
 import SwiftUI
+import UIKit
 import WidgetKit
 import ShhhcribbleCore
 import os
@@ -8,6 +9,7 @@ private let diagLog = Logger(subsystem: "com.shhhcribble.diag", category: "app")
 
 @main
 struct ShhhcribbleApp: App {
+    @UIApplicationDelegateAdaptor(SyncAppDelegate.self) private var appDelegate
     @StateObject private var status = TranscriptionStatus.shared
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage("onboardingComplete") private var onboardingComplete: Bool = false
@@ -19,6 +21,7 @@ struct ShhhcribbleApp: App {
         // delivered. Reading the task list brings the alerts in step.
         ReminderScheduler.shared.configure()
         _ = TaskList.shared
+        SyncService.shared.start()
         StopRecordingIntent.performer = {
             await TranscriptionService.shared.stopRecording()
         }
@@ -78,7 +81,10 @@ struct ShhhcribbleApp: App {
                 .onChange(of: scenePhase) { _, phase in
                     // The widget or the keyboard may have written to the
                     // library while the app was away.
-                    if phase == .active { SharedLibrary.store.reloadIfChangedElsewhere() }
+                    if phase == .active {
+                        SharedLibrary.store.reloadIfChangedElsewhere()
+                        SyncService.shared.syncNow()
+                    }
                     // Only auto-stop on backgrounding when the recording was
                     // launched via URL scheme (e.g. Back Tap → Shortcut → app
                     // launches → user taps the "← Back to X" pill iOS shows
@@ -155,5 +161,18 @@ struct ShhhcribbleApp: App {
         default:
             break
         }
+    }
+}
+
+/// Only for iCloud: CKSyncEngine learns of changes from another device through
+/// silent pushes, which need the app registered for remote notifications. It
+/// handles the pushes itself; this asks iOS for them and nothing more.
+final class SyncAppDelegate: NSObject, UIApplicationDelegate {
+    func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
+    ) -> Bool {
+        if SyncService.buildCanSync { application.registerForRemoteNotifications() }
+        return true
     }
 }

@@ -4,6 +4,7 @@ import UIKit
 
 struct NotesListView: View {
     @ObservedObject private var library = Library.shared
+    @ObservedObject private var sync = SyncService.shared
     private var notes: [LibraryNote] { library.notes }
     @State private var searchText: String = ""
     @State private var selectedTags: Set<String> = []
@@ -64,6 +65,15 @@ struct NotesListView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 12)
                     .padding(.bottom, 8)
+                }
+
+                if case .needsConfirmation(let count) = sync.status {
+                    HeldDeletesCard(count: count)
+                        .padding(14)
+                        .background(Color(.secondarySystemGroupedBackground),
+                                    in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 8)
                 }
 
                 if !notes.isEmpty {

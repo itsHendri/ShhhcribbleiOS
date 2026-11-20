@@ -32,6 +32,7 @@ struct SettingsView: View {
 
                 Form {
                     transcriptionStyleSection
+                    SyncSection()
                     cleanupSection
                     vocabularySection
                     performanceSection
@@ -298,5 +299,118 @@ struct SettingsView: View {
     private var appVersion: String {
         let short = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0"
         return short
+    }
+}
+
+/// Settings › Sync. Off by default. Turning it on goes through one sheet that
+/// says in plain words what leaves the phone; the same words stay here.
+private struct SyncSection: View {
+    @ObservedObject private var sync = SyncService.shared
+    @AppStorage(SyncService.enabledKey) private var enabled = false
+    @State private var showingDisclosure = false
+    @State private var showingWords = false
+
+    var body: some View {
+        Section {
+            Toggle("Sync with iCloud", isOn: Binding(
+                get: { enabled },
+                set: { wantOn in
+                    if wantOn { showingDisclosure = true } else { sync.turnOff() }
+                }))
+                .disabled(!SyncService.buildCanSync)
+            statusRow
+            Button("What sync does with your words") { showingWords = true }
+                .font(.footnote)
+                .frame(minHeight: 44)
+        } header: {
+            Text("Sync")
+        } footer: {
+            Text("Keeps your notes, tasks and dictionary the same on this iPhone and your Mac, through your own iCloud.")
+        }
+        .sheet(isPresented: $showingDisclosure) { disclosure(turningOn: true) }
+        .sheet(isPresented: $showingWords) { disclosure(turningOn: false) }
+    }
+
+    @ViewBuilder
+    private var statusRow: some View {
+        if !SyncService.buildCanSync {
+            Label("Sync is not available in this build.", systemImage: "icloud.slash")
+                .foregroundStyle(.secondary)
+        } else {
+            switch sync.status {
+            case .off:
+                Label("Off. Nothing leaves this iPhone.", systemImage: "icloud.slash")
+                    .foregroundStyle(.secondary)
+            case .syncing:
+                Label("Syncing…", systemImage: "arrow.triangle.2.circlepath")
+            case .upToDate(let date):
+                Label("Up to date as of \(date.formatted(date: .omitted, time: .shortened))",
+                      systemImage: "checkmark.icloud")
+            case .needsConfirmation(let count):
+                HeldDeletesCard(count: count)
+            case .unavailable(let why):
+                Label(why, systemImage: "exclamationmark.icloud")
+            case .failed(let why):
+                Label("Sync could not finish. \(why)", systemImage: "exclamationmark.icloud")
+            }
+        }
+    }
+
+    private func disclosure(turningOn: Bool) -> some View {
+        NavigationStack {
+            ScrollView {
+                Text(SyncService.disclosure)
+                    .font(.callout)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(20)
+            }
+            .navigationTitle(turningOn ? "Turn on sync?" : "Sync and your words")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                if turningOn {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Not Now") { showingDisclosure = false }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Turn On Sync") {
+                            showingDisclosure = false
+                            enabled = true
+                            Task { await sync.turnOn() }
+                        }
+                    }
+                } else {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") { showingWords = false }
+                    }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+    }
+}
+
+/// Sync noticed that many notes are gone from this iPhone and is holding the
+/// deletes instead of sending them everywhere. The user decides.
+struct HeldDeletesCard: View {
+    let count: Int
+    @ObservedObject private var sync = SyncService.shared
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label("\(count) notes are no longer on this iPhone", systemImage: "exclamationmark.triangle")
+                .font(.subheadline.weight(.semibold))
+            Text("Deleting them here would delete them from iCloud and your Mac too. Nothing has been deleted yet.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+            HStack {
+                Button("Bring Them Back") { sync.restoreHeldRows() }
+                    .buttonStyle(.borderedProminent)
+                Spacer()
+                Button("Delete Everywhere", role: .destructive) { sync.confirmHeldDeletes() }
+                    .buttonStyle(.bordered)
+            }
+            .frame(minHeight: 44)
+        }
+        .padding(.vertical, 4)
     }
 }

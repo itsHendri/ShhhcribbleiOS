@@ -87,6 +87,11 @@ targets:
         NSSupportsLiveActivities: true
         UIBackgroundModes:
           - audio
+          # CKSyncEngine hears of changes from the Mac through silent pushes.
+          - remote-notification
+        # The build carries the iCloud entitlement (see entitlements below).
+        # SyncService refuses to touch CloudKit without it.
+        ShhhCloudKitEnabled: true
         UILaunchScreen: {}
         UIRequiredDeviceCapabilities:
           - microphone
@@ -97,6 +102,13 @@ targets:
       properties:
         com.apple.security.application-groups:
           - group.com.shhhcribble
+        # iCloud sync, the same private container as the Mac app. Keep in step
+        # with ShhhCloudKitEnabled in the Info.plist above.
+        com.apple.developer.icloud-container-identifiers:
+          - iCloud.com.shhhcribble.library
+        com.apple.developer.icloud-services:
+          - CloudKit
+        aps-environment: development
         # Reminders may break through a Focus, as Apple Reminders does.
         com.apple.developer.usernotifications.time-sensitive: true
     settings:

@@ -20,8 +20,8 @@ What they agree on: a single delete gets an Undo, not a question; deleting many 
 - 2026-11-20, Hendri: Undo plus Recently Deleted (over Undo only).
   - Every delete shows "Note deleted · Undo" (or "N notes deleted") for six seconds. Built: the full row is kept in memory, so Undo restores everything, including the Mac's styling and the summary.
   - Deleted notes go to Recently Deleted for 30 days, then are removed for good. Days left on each row, Recover and Recover All.
-  - Clear All leaves the Notes header.
+  - Clear All leaves the Notes header. Done 2026-11-20 (Hendri: "we shouldn't have a clear all so prominent"). Until Select mode exists, notes are deleted one at a time by swipe or from the note screen, each with Undo.
 
 ## Open
-- Where Recently Deleted and Clear All live (design round on the canvas).
+- Where Recently Deleted and deleting several live: canvas page "? Review", row "Deleting notes", options A to D (A suggested: a row at the end of the list, and Select in the header).
 - Recently Deleted needs a "deleted at" field in the shared library, so it is the Mac track's schema to change, and the Mac app would show the same bin.

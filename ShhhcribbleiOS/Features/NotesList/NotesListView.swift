@@ -8,7 +8,6 @@ struct NotesListView: View {
     @State private var searchText: String = ""
     @State private var selectedTags: Set<String> = []
     @State private var showFileImporter = false
-    @State private var confirmClearAll = false
 
     private var allTags: [String] { library.allTags }
 
@@ -44,11 +43,9 @@ struct NotesListView: View {
                             .frame(width: 44, height: 44)
                     }
                     .accessibilityLabel("Import audio file")
-                    if !notes.isEmpty {
-                        Button("Clear All", role: .destructive) { confirmClearAll = true }
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(.red)
-                    }
+                    // No delete-all in the header (Hendri, 2026-11-20): it sat
+                    // beside an everyday button and wiped every note. Deleting
+                    // several comes back through Select, with Recently Deleted.
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 12)
@@ -103,16 +100,6 @@ struct NotesListView: View {
             .navigationDestination(for: UUID.self) { id in
                 NoteDetailView(noteID: id)
             }
-            .confirmationDialog(
-                notes.count == 1 ? "Delete your note?" : "Delete all \(notes.count) notes?",
-                isPresented: $confirmClearAll,
-                titleVisibility: .visible
-            ) {
-                Button(notes.count == 1 ? "Delete 1 Note" : "Delete \(notes.count) Notes", role: .destructive, action: clearAll)
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("This can't be undone. Your tasks are kept.")
-            }
         }
     }
 
@@ -141,12 +128,6 @@ struct NotesListView: View {
         }
     }
 
-    private func clearAll() {
-        let count = notes.count
-        selectedTags.removeAll()
-        library.deleteAll()
-        Self.offerUndo(count: count)
-    }
 }
 
 private struct TagFilterBar: View {

@@ -103,6 +103,7 @@ struct NoteDetailView: View {
         ) {
             Button("Delete", role: .destructive) {
                 library.delete(id: noteID)
+                NotesListView.offerUndo(count: 1)
                 dismiss()
             }
             Button("Cancel", role: .cancel) {}

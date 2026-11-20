@@ -16,6 +16,12 @@
 
 What they agree on: a single delete gets an Undo, not a question; deleting many happens from a select mode or a settings screen, never a standing header button; the safe apps keep deleted items for a set time and show the days left. Nobody in the set puts delete-all beside an everyday button.
 
+## Decided
+- 2026-11-20, Hendri: Undo plus Recently Deleted (over Undo only).
+  - Every delete shows "Note deleted · Undo" (or "N notes deleted") for six seconds. Built: the full row is kept in memory, so Undo restores everything, including the Mac's styling and the summary.
+  - Deleted notes go to Recently Deleted for 30 days, then are removed for good. Days left on each row, Recover and Recover All.
+  - Clear All leaves the Notes header.
+
 ## Open
-- Direction (see the options put to Hendri on 2026-11-20).
+- Where Recently Deleted and Clear All live (design round on the canvas).
 - Recently Deleted needs a "deleted at" field in the shared library, so it is the Mac track's schema to change, and the Mac app would show the same bin.

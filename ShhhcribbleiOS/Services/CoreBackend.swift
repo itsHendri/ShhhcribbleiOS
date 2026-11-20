@@ -71,8 +71,22 @@ final class CoreBackend: LibraryBackend {
         store.updateNote(row)
     }
 
+    /// The full rows the last delete removed, kept in memory only, so Undo
+    /// puts back every field (the Mac's styling, summary, times), not just
+    /// what the phone shows. Gone when the app quits; the 30-day bin comes
+    /// with the shared library's "deleted at" field.
+    private var lastDeleted: [Note] = []
+
     func delete(id: UUID) {
+        lastDeleted = store.notes.filter { $0.id == id }
         store.deleteNote(id: id)
+    }
+
+    func undoLastDelete() -> Int {
+        var count = 0
+        for row in lastDeleted where store.addNoteIfAbsent(row) { count += 1 }
+        lastDeleted = []
+        return count
     }
 
     func saveSummary(id: UUID, summary: String, items: [NoteActionItem], at date: Date) {
@@ -87,6 +101,7 @@ final class CoreBackend: LibraryBackend {
     }
 
     func deleteAll() {
+        lastDeleted = store.notes.filter { !$0.isTask }
         for note in store.notes where !note.isTask {
             store.deleteNote(id: note.id)
         }

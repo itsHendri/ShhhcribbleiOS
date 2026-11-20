@@ -78,6 +78,10 @@ protocol LibraryBackend {
     func update(_ note: LibraryNote)
     func delete(id: UUID)
     func deleteAll()
+    /// Puts back what the last `delete` or `deleteAll` removed, exactly as it
+    /// was. Returns how many notes came back. A later delete replaces what
+    /// can be undone.
+    func undoLastDelete() -> Int
     /// Stores a summary. Not an edit: the note keeps its modified time.
     func saveSummary(id: UUID, summary: String, items: [NoteActionItem], at date: Date)
     /// Called when the stored notes changed by another hand: the widget, the
@@ -168,6 +172,15 @@ final class Library: ObservableObject {
         backend.delete(id: id)
     }
 
+    /// Brings back the notes the last delete removed. See
+    /// `LibraryBackend.undoLastDelete`.
+    @discardableResult
+    func undoLastDelete() -> Int {
+        let count = backend.undoLastDelete()
+        if count > 0 { reload() }
+        return count
+    }
+
     func saveSummary(id: UUID, summary: String, items: [NoteActionItem], at date: Date = Date()) {
         guard let index = notes.firstIndex(where: { $0.id == id }) else { return }
         notes[index].summary = summary
@@ -202,6 +215,25 @@ final class InMemoryBackend: LibraryBackend {
         stored[id]?.actionItems = items
         stored[id]?.summaryGeneratedAt = date
     }
-    func delete(id: UUID) { stored[id] = nil }
-    func deleteAll() { stored.removeAll() }
+    private var lastDeleted: [LibraryNote] = []
+
+    func delete(id: UUID) {
+        lastDeleted = stored[id].map { [$0] } ?? []
+        stored[id] = nil
+    }
+
+    func deleteAll() {
+        lastDeleted = Array(stored.values)
+        stored.removeAll()
+    }
+
+    func undoLastDelete() -> Int {
+        var count = 0
+        for note in lastDeleted where stored[note.id] == nil {
+            stored[note.id] = note
+            count += 1
+        }
+        lastDeleted = []
+        return count
+    }
 }

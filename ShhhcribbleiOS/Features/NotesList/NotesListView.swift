@@ -123,11 +123,29 @@ struct NotesListView: View {
 
     private func delete(_ note: LibraryNote) {
         library.delete(id: note.id)
+        Self.offerUndo(count: 1)
+    }
+
+    /// The bar that follows any delete. Six seconds to take it back.
+    static func offerUndo(count: Int) {
+        ToastManager.shared.show(
+            count == 1 ? "Note deleted" : "\(count) notes deleted",
+            systemImage: "trash",
+            actionLabel: "Undo"
+        ) {
+            let back = Library.shared.undoLastDelete()
+            if back > 0 {
+                ToastManager.shared.show(back == 1 ? "Note restored" : "\(back) notes restored",
+                                         systemImage: "arrow.uturn.backward")
+            }
+        }
     }
 
     private func clearAll() {
+        let count = notes.count
         selectedTags.removeAll()
         library.deleteAll()
+        Self.offerUndo(count: count)
     }
 }
 

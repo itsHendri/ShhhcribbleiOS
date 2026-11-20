@@ -54,6 +54,21 @@ final class CoreBackendTests: XCTestCase {
         XCTAssertEqual(store.notes.first?.tags, ["work"])
     }
 
+    func testUndoRestoresTheWholeRowIncludingMacStyling() {
+        let (store, library) = make()
+        var row = Note(text: "Styled on the Mac")
+        row.richText = Data([9, 9])
+        row.summary = "A summary"
+        store.addNote(row)
+        library.reload()
+        library.delete(id: row.id)
+        XCTAssertTrue(store.notes.isEmpty)
+        XCTAssertEqual(library.undoLastDelete(), 1)
+        XCTAssertEqual(store.notes.first?.richText, Data([9, 9]))
+        XCTAssertEqual(store.notes.first?.summary, "A summary")
+        XCTAssertEqual(store.notes.first?.createdAt, row.createdAt)
+    }
+
     func testTasksStayOutOfTheNotesList() {
         let (store, library) = make()
         store.addTask(text: "Call the dentist")

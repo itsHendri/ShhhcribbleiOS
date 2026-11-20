@@ -60,4 +60,24 @@ final class LibraryTests: XCTestCase {
         library.deleteAll()
         XCTAssertTrue(library.notes.isEmpty)
     }
+
+    func testUndoBringsBackADeletedNote() {
+        let library = makeLibrary()
+        let id = UUID()
+        library.insert(transcript: "Keep me", duration: 1, trigger: .manual, id: id)
+        library.delete(id: id)
+        XCTAssertNil(library.note(id: id))
+        XCTAssertEqual(library.undoLastDelete(), 1)
+        XCTAssertEqual(library.note(id: id)?.transcript, "Keep me")
+        XCTAssertEqual(library.undoLastDelete(), 0, "undo works once")
+    }
+
+    func testUndoAfterClearAllBringsBackEverything() {
+        let library = makeLibrary()
+        library.insert(transcript: "One", duration: 1, trigger: .manual)
+        library.insert(transcript: "Two", duration: 1, trigger: .manual)
+        library.deleteAll()
+        XCTAssertEqual(library.undoLastDelete(), 2)
+        XCTAssertEqual(library.notes.count, 2)
+    }
 }

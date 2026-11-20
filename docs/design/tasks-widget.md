@@ -11,6 +11,13 @@ One home-screen page that holds only Shhhcribble: a large widget on top and a me
   - Medium widget: a record button on the left (starts a recording, same path as the Control Center control) and the latest note on the right (time, length, up to four lines).
   - Accepted cost: three fewer task rows than a list in both widgets.
 
+## Drafts round (2026-11-20), waiting for a pick
+On the canvas page "? Review": D in three looks, each in light and dark, plus the empty states.
+1. System (suggested): system type, the app's blue only on the record button.
+2. Ink: no colour, rounded type, hairlines.
+3. Next up: the next task large on top, a round record button, six tasks.
+Colours checked for contrast: the record label is white on #1F5FD6 in light and dark navy on #6BA6FF in dark; the overdue badge always carries the word.
+
 ## Fixed by the platform
 - Widgets cannot scroll. What fits is all there is: about 7 rows plus a header in the large one, 3 in the medium one, at a 44 px touch size.
 - Tick boxes work without opening the app (an intent that writes to the shared store from the widget process).
@@ -22,8 +29,7 @@ One home-screen page that holds only Shhhcribble: a large widget on top and a me
 - The medium widget reads the latest note through the shared store's light reader, never the full library.
 
 ## Open
-- Dark mode, the real type and colour (drafts round, before step 6 builds it).
-- What the medium widget shows when there are no notes yet, and the large one when there are no tasks.
+- The look (drafts round above) and whether the empty-state wording is right.
 - Lock screen and StandBy versions.
 
 ## Explicitly deferred

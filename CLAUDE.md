@@ -11,6 +11,8 @@ Read `../../docs/ECOSYSTEM.md` first. Where it and this file disagree, it wins.
 - Notes are read and written only through `Library` (`Services/Library.swift`), a value-type seam. `SwiftDataBackend.swift` and `Models/Note.swift` are the only files that know SwiftData; adopting the shared package means one new `LibraryBackend`. Never use `@Query` or a model context in a view.
 - Audio files become notes through `TranscriptionService.importAudioFile(_:id:)` (always Parakeet TDT v3, insert-if-absent by id). The recorder receiver will call the same function with the recording id.
 - Tests: `xcodebuild ... test` runs unit tests plus a real-model run on `ShhhcribbleiOSTests/Fixtures/spoken-clip.wav`. In debug builds, launching with `-ShhhTestClip <path>` feeds a clip in place of the microphone.
+- Parity rule (Hendri, 2026-11-20): the library is shared, so its features are too. The phone has no note field the Mac lacks. The separately editable title is dropped when the shared core is adopted; the title is derived from the first line, as on the Mac.
+- Tasks widget: direction D, Tasks plus capture (`docs/design/tasks-widget.md`).
 - Still load-bearing, unchanged: the AirPods audio rules, tap-to-stop, no input device picker, no voice processing.
 - The sprint list below is history. The current order of work is the approved plan of 2026-11-19.
 

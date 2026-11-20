@@ -39,7 +39,7 @@ final class CoreBackend: LibraryBackend {
     init(store: TranscriptStore) {
         self.store = store
         // `$notes` fires before the array changes, so read on the next turn.
-        watch = store.$notes.dropFirst().sink { [weak self] _ in
+        watch = store.$notes.dropFirst().merge(with: store.$trashedNotes.dropFirst()).sink { [weak self] _ in
             DispatchQueue.main.async { self?.onExternalChange?() }
         }
     }
@@ -71,22 +71,35 @@ final class CoreBackend: LibraryBackend {
         store.updateNote(row)
     }
 
-    /// The full rows the last delete removed, kept in memory only, so Undo
-    /// puts back every field (the Mac's styling, summary, times), not just
-    /// what the phone shows. Gone when the app quits; the 30-day bin comes
-    /// with the shared library's "deleted at" field.
-    private var lastDeleted: [Note] = []
+    /// What the last delete binned, so Undo can take exactly that back out.
+    private var lastDeleted: [UUID] = []
 
+    /// A delete moves the note to Recently Deleted (the shared bin, kept 30
+    /// days and synced), never removes the row.
     func delete(id: UUID) {
-        lastDeleted = store.notes.filter { $0.id == id }
-        store.deleteNote(id: id)
+        lastDeleted = store.notes.contains { $0.id == id } ? [id] : []
+        store.trashNote(id: id)
     }
 
     func undoLastDelete() -> Int {
-        var count = 0
-        for row in lastDeleted where store.addNoteIfAbsent(row) { count += 1 }
+        let ids = lastDeleted.filter { id in store.trashedNotes.contains { $0.id == id } }
+        for id in ids { store.restoreNote(id: id) }
         lastDeleted = []
-        return count
+        return ids.count
+    }
+
+    func trashed() -> [LibraryNote] {
+        store.trashedNotes.filter { !$0.isTask }.map(Self.libraryNote)
+    }
+
+    func restore(id: UUID) {
+        store.restoreNote(id: id)
+    }
+
+    /// For good. Only rows in the bin, so a live note can never go this way.
+    func deleteForever(ids: [UUID]) {
+        let binned = Set(store.trashedNotes.map(\.id))
+        for id in ids where binned.contains(id) { store.deleteNote(id: id) }
     }
 
     func saveSummary(id: UUID, summary: String, items: [NoteActionItem], at date: Date) {
@@ -101,10 +114,8 @@ final class CoreBackend: LibraryBackend {
     }
 
     func deleteAll() {
-        lastDeleted = store.notes.filter { !$0.isTask }
-        for note in store.notes where !note.isTask {
-            store.deleteNote(id: note.id)
-        }
+        lastDeleted = store.notes.filter { !$0.isTask }.map(\.id)
+        for id in lastDeleted { store.trashNote(id: id) }
     }
 
     private static func libraryNote(_ row: Note) -> LibraryNote {
@@ -122,6 +133,7 @@ final class CoreBackend: LibraryBackend {
             NoteActionItem(text: $0.text, quote: $0.quote, owner: $0.owner.rawValue)
         }
         note.summaryGeneratedAt = row.summaryGeneratedAt
+        note.deletedAt = row.deletedAt
         return note
     }
 }

@@ -22,6 +22,9 @@ What they agree on: a single delete gets an Undo, not a question; deleting many 
   - Deleted notes go to Recently Deleted for 30 days, then are removed for good. Days left on each row, Recover and Recover All.
   - Clear All leaves the Notes header. Done 2026-11-20 (Hendri: "we shouldn't have a clear all so prominent"). Until Select mode exists, notes are deleted one at a time by swipe or from the note screen, each with Undo.
 
+## Built (2026-11-20)
+- The bin is in the shared library (Mac track, core commit `16f09ba`, schema 19). Phone deletes and Clear All go to it; Undo takes them back out. The Recently Deleted screen: days left on each note, swipe right to recover, swipe left to delete now, Recover All, Delete All Now with a confirm. Checked in the simulator.
+
 ## Open
 - Where Recently Deleted and deleting several live: canvas page "? Review", row "Deleting notes", options A to D (A suggested: a row at the end of the list, and Select in the header).
-- Recently Deleted needs a "deleted at" field in the shared library, so it is the Mac track's schema to change, and the Mac app would show the same bin.
+- The Mac still deletes for good and has no bin screen yet (the Mac track's call). Notes binned on the phone leave the Mac's lists.

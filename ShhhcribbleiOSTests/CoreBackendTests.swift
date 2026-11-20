@@ -69,6 +69,44 @@ final class CoreBackendTests: XCTestCase {
         XCTAssertEqual(store.notes.first?.createdAt, row.createdAt)
     }
 
+    func testDeleteMovesToTheBinAndRestoreBringsItBack() {
+        let (store, library) = make()
+        let id = UUID()
+        library.insert(transcript: "Binned", duration: 2, trigger: .manual, id: id)
+        library.delete(id: id)
+        XCTAssertTrue(library.notes.isEmpty)
+        XCTAssertEqual(library.trashed.map(\.id), [id])
+        XCTAssertNotNil(library.trashed.first?.deletedAt)
+        XCTAssertEqual(store.trashedNotes.map(\.id), [id], "the row is in the shared bin, not gone")
+        XCTAssertFalse(library.insert(transcript: "Again", duration: 1, trigger: .file, id: id),
+                       "a binned recording is not saved again")
+        library.restore(id: id)
+        XCTAssertEqual(library.notes.map(\.transcript), ["Binned"])
+        XCTAssertTrue(library.trashed.isEmpty)
+    }
+
+    func testDeleteForeverOnlyTouchesTheBin() {
+        let (store, library) = make()
+        let live = UUID(), binned = UUID()
+        library.insert(transcript: "Live", duration: 1, trigger: .manual, id: live)
+        library.insert(transcript: "Binned", duration: 1, trigger: .manual, id: binned)
+        library.delete(id: binned)
+        library.deleteForever(ids: [live, binned])
+        XCTAssertEqual(library.notes.map(\.id), [live])
+        XCTAssertTrue(store.trashedNotes.isEmpty)
+    }
+
+    func testDaysLeftCountsDownFromThirty() {
+        var note = LibraryNote(transcript: "x", duration: 0, trigger: .manual)
+        let now = Date()
+        note.deletedAt = now
+        XCTAssertEqual(Library.daysLeft(note, now: now), 30)
+        note.deletedAt = Calendar.current.date(byAdding: .day, value: -29, to: now)
+        XCTAssertEqual(Library.daysLeft(note, now: now), 1)
+        note.deletedAt = Calendar.current.date(byAdding: .day, value: -40, to: now)
+        XCTAssertEqual(Library.daysLeft(note, now: now), 0)
+    }
+
     func testTasksStayOutOfTheNotesList() {
         let (store, library) = make()
         store.addTask(text: "Call the dentist")

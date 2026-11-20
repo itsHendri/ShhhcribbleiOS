@@ -146,6 +146,9 @@ struct ShhhcribbleApp: App {
             AppRouter.shared.tab = .tasks
         case "notes":
             AppRouter.shared.tab = .notes
+        case "deleted":
+            AppRouter.shared.tab = .notes
+            AppRouter.shared.showingBin = true
         case "stop":
             status.launchedViaURL = true
             Task { await TranscriptionService.shared.stopRecording() }

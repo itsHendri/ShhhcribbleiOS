@@ -17,6 +17,8 @@ struct LibraryNote: Identifiable, Hashable, Sendable {
     var summary: String?
     var actionItems: [NoteActionItem] = []
     var summaryGeneratedAt: Date?
+    /// Set while the note is in Recently Deleted.
+    var deletedAt: Date?
 
     init(
         id: UUID = UUID(),
@@ -76,12 +78,18 @@ protocol LibraryBackend {
     /// Returns false, and stores nothing, when a note with that id exists.
     func insert(_ note: LibraryNote) -> Bool
     func update(_ note: LibraryNote)
+    /// Moves the note to Recently Deleted.
     func delete(id: UUID)
+    /// Moves every note (not tasks) to Recently Deleted.
     func deleteAll()
-    /// Puts back what the last `delete` or `deleteAll` removed, exactly as it
-    /// was. Returns how many notes came back. A later delete replaces what
-    /// can be undone.
+    /// Takes back what the last `delete` or `deleteAll` binned. Returns how
+    /// many notes came back. A later delete replaces what can be undone.
     func undoLastDelete() -> Int
+    /// Recently Deleted, most recently binned first.
+    func trashed() -> [LibraryNote]
+    func restore(id: UUID)
+    /// Deletes for good. Only notes in Recently Deleted.
+    func deleteForever(ids: [UUID])
     /// Stores a summary. Not an edit: the note keeps its modified time.
     func saveSummary(id: UUID, summary: String, items: [NoteActionItem], at date: Date)
     /// Called when the stored notes changed by another hand: the widget, the
@@ -96,11 +104,17 @@ final class Library: ObservableObject {
     static let shared = Library(backend: CoreBackend(store: SharedLibrary.store))
 
     @Published private(set) var notes: [LibraryNote]
+    /// Recently Deleted, most recently binned first.
+    @Published private(set) var trashed: [LibraryNote]
     private var backend: LibraryBackend
+
+    /// How long a note stays in Recently Deleted.
+    static let binDays = 30
 
     init(backend: LibraryBackend) {
         self.backend = backend
         self.notes = backend.all().sorted { $0.createdAt > $1.createdAt }
+        self.trashed = backend.trashed()
         self.backend.onExternalChange = { [weak self] in self?.reload() }
     }
 
@@ -109,6 +123,32 @@ final class Library: ObservableObject {
     func reload() {
         let fresh = backend.all().sorted { $0.createdAt > $1.createdAt }
         if fresh != notes { notes = fresh }
+        let bin = backend.trashed()
+        if bin != trashed { trashed = bin }
+    }
+
+    func restore(id: UUID) {
+        backend.restore(id: id)
+        reload()
+    }
+
+    func restoreAll() {
+        for note in trashed { backend.restore(id: note.id) }
+        reload()
+    }
+
+    func deleteForever(ids: [UUID]) {
+        backend.deleteForever(ids: ids)
+        reload()
+    }
+
+    /// Days before a binned note is removed for good, at least 0.
+    static func daysLeft(_ note: LibraryNote, now: Date = Date(), calendar: Calendar = .current) -> Int {
+        guard let deleted = note.deletedAt,
+              let end = calendar.date(byAdding: .day, value: binDays, to: deleted) else { return binDays }
+        let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: now),
+                                           to: calendar.startOfDay(for: end)).day ?? 0
+        return max(0, days)
     }
 
     func note(id: UUID) -> LibraryNote? {
@@ -170,6 +210,7 @@ final class Library: ObservableObject {
     func delete(id: UUID) {
         notes.removeAll { $0.id == id }
         backend.delete(id: id)
+        reload()
     }
 
     /// Brings back the notes the last delete removed. See
@@ -192,6 +233,7 @@ final class Library: ObservableObject {
     func deleteAll() {
         notes.removeAll()
         backend.deleteAll()
+        reload()
     }
 }
 
@@ -199,41 +241,60 @@ final class Library: ObservableObject {
 @MainActor
 final class InMemoryBackend: LibraryBackend {
     private var stored: [UUID: LibraryNote] = [:]
+    private var bin: [UUID: LibraryNote] = [:]
+    private var lastDeleted: [UUID] = []
     var onExternalChange: (() -> Void)?
 
     func all() -> [LibraryNote] { Array(stored.values) }
 
     func insert(_ note: LibraryNote) -> Bool {
-        guard stored[note.id] == nil else { return false }
+        guard stored[note.id] == nil, bin[note.id] == nil else { return false }
         stored[note.id] = note
         return true
     }
 
     func update(_ note: LibraryNote) { stored[note.id] = note }
+
     func saveSummary(id: UUID, summary: String, items: [NoteActionItem], at date: Date) {
         stored[id]?.summary = summary
         stored[id]?.actionItems = items
         stored[id]?.summaryGeneratedAt = date
     }
-    private var lastDeleted: [LibraryNote] = []
 
     func delete(id: UUID) {
-        lastDeleted = stored[id].map { [$0] } ?? []
-        stored[id] = nil
+        lastDeleted = stored[id] == nil ? [] : [id]
+        bin(id)
     }
 
     func deleteAll() {
-        lastDeleted = Array(stored.values)
-        stored.removeAll()
+        lastDeleted = Array(stored.keys)
+        for id in lastDeleted { bin(id) }
+    }
+
+    private func bin(_ id: UUID) {
+        guard var note = stored.removeValue(forKey: id) else { return }
+        note.deletedAt = Date()
+        bin[id] = note
     }
 
     func undoLastDelete() -> Int {
-        var count = 0
-        for note in lastDeleted where stored[note.id] == nil {
-            stored[note.id] = note
-            count += 1
-        }
+        let ids = lastDeleted.filter { bin[$0] != nil }
+        for id in ids { restore(id: id) }
         lastDeleted = []
-        return count
+        return ids.count
+    }
+
+    func trashed() -> [LibraryNote] {
+        bin.values.sorted { ($0.deletedAt ?? .distantPast) > ($1.deletedAt ?? .distantPast) }
+    }
+
+    func restore(id: UUID) {
+        guard var note = bin.removeValue(forKey: id) else { return }
+        note.deletedAt = nil
+        stored[id] = note
+    }
+
+    func deleteForever(ids: [UUID]) {
+        for id in ids { bin[id] = nil }
     }
 }

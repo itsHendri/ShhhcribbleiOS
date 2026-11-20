@@ -64,6 +64,7 @@
 		F43C44C71BC3E83F2B59343D /* TasksTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B74067F044B1E195E1EC17D /* TasksTests.swift */; };
 		FC825DC4939F22412C816BCD /* String+TitleGeneration.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF1C9A70FCBEE2639F513380 /* String+TitleGeneration.swift */; };
 		FEB74658A02A655E41807690 /* StartRecordingIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6836E2B6F662F9DFBCBC4D3 /* StartRecordingIntent.swift */; };
+		FFFF9830BAA987C61055A50F /* RecentlyDeletedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C08FFE9D36F896CE17132E22 /* RecentlyDeletedView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -161,6 +162,7 @@
 		BCA1296BE0BC4DC32DDE96D0 /* Tasks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tasks.swift; sourceTree = "<group>"; };
 		BF5EFD8AD8054C11CF78538B /* CoreBackend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreBackend.swift; sourceTree = "<group>"; };
 		BF932B842F1D3FF7670E760F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		C08FFE9D36F896CE17132E22 /* RecentlyDeletedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentlyDeletedView.swift; sourceTree = "<group>"; };
 		C7F900040047335FB601FF83 /* SilenceGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SilenceGate.swift; sourceTree = "<group>"; };
 		CCAD0BDCCEE9197686C02B83 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		D26455BBCF1C20CF583B6BD4 /* FileTranscriptionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileTranscriptionTests.swift; sourceTree = "<group>"; };
@@ -406,6 +408,7 @@
 			children = (
 				A66FFE6583F71BE22473665B /* ContentView.swift */,
 				0455E8A2F77821C2798406E2 /* NotesListView.swift */,
+				C08FFE9D36F896CE17132E22 /* RecentlyDeletedView.swift */,
 			);
 			path = NotesList;
 			sourceTree = "<group>";
@@ -630,6 +633,7 @@
 				B2DC6A9E4BB42904174465C6 /* NoteDetailView.swift in Sources */,
 				32EF336E4F1238643CD62402 /* NotesListView.swift in Sources */,
 				8B2AB72AD46FC20682EE9EB3 /* OnboardingView.swift in Sources */,
+				FFFF9830BAA987C61055A50F /* RecentlyDeletedView.swift in Sources */,
 				5C09F93FEB042D216EA310B5 /* RecordingView.swift in Sources */,
 				4050373D87196A7B164DCD59 /* ReminderScheduler.swift in Sources */,
 				39709EDB971E5B5F478230AA /* SettingsView.swift in Sources */,

@@ -137,8 +137,10 @@ final class TaskList: ObservableObject {
         store.snoozeNote(id: id, until: date)
     }
 
+    /// To Recently Deleted, like a note. Its alert goes, since the bin is
+    /// not in `store.notes`.
     func delete(id: UUID) {
-        store.deleteNote(id: id)
+        store.trashNote(id: id)
     }
 
     /// Turns a task back into an ordinary note. With `text`, the note gets

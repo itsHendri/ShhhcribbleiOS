@@ -15,6 +15,8 @@ final class NoteFocus: ObservableObject {
 final class AppRouter: ObservableObject {
     static let shared = AppRouter()
     @Published var tab: ContentView.BottomTab = .notes
+    /// Recently Deleted, shown over the current tab.
+    @Published var showingBin = false
     private init() {}
 }
 
@@ -65,6 +67,10 @@ struct ContentView: View {
 
             ToastOverlay()
                 .zIndex(3)
+        }
+        .sheet(isPresented: $router.showingBin) {
+            RecentlyDeletedView()
+                .overlay { ToastOverlay() }
         }
     }
 }

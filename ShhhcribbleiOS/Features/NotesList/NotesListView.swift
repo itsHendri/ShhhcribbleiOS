@@ -122,7 +122,7 @@ struct NotesListView: View {
         ) {
             let back = Library.shared.undoLastDelete()
             if back > 0 {
-                ToastManager.shared.show(back == 1 ? "Note restored" : "\(back) notes restored",
+                ToastManager.shared.show(back == 1 ? "Note recovered" : "\(back) notes recovered",
                                          systemImage: "arrow.uturn.backward")
             }
         }

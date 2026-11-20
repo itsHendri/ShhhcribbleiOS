@@ -8,7 +8,8 @@ extension String {
         let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return "Untitled" }
 
-        let terminators: Set<Character> = [".", "!", "?"]
+        // A line break ends the title too: the title is the first line.
+        let terminators: Set<Character> = [".", "!", "?", "\n"]
         var firstSentence = ""
         for ch in trimmed {
             if terminators.contains(ch) { break }

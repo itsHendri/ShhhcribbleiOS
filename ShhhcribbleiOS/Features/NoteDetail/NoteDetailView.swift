@@ -11,7 +11,7 @@ struct NoteDetailView: View {
     /// shows up here and is never overwritten by a stale copy.
     private var note: LibraryNote {
         library.note(id: noteID)
-            ?? LibraryNote(id: noteID, title: "", transcript: "", duration: 0, trigger: .manual)
+            ?? LibraryNote(id: noteID, transcript: "", duration: 0, trigger: .manual)
     }
 
     private func field<T>(_ keyPath: WritableKeyPath<LibraryNote, T>) -> Binding<T> {
@@ -30,9 +30,10 @@ struct NoteDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                TextField("Title", text: field(\.title), axis: .vertical)
+                Text(note.title)
                     .font(.system(size: 24, weight: .bold))
                     .lineLimit(1...3)
+                    .accessibilityAddTraits(.isHeader)
 
                 HStack(spacing: 12) {
                     Label(formattedTimestamp, systemImage: "calendar")

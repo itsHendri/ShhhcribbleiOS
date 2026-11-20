@@ -25,7 +25,7 @@ final class LibraryTests: XCTestCase {
         XCTAssertEqual(library.notes.first?.transcript, "From the recorder")
     }
 
-    func testAppendKeepsTitleAndAddsBlankLine() {
+    func testAppendAddsBlankLineAndTitleStaysTheFirstLine() {
         let library = makeLibrary()
         let id = UUID()
         library.insert(transcript: "Start", duration: 1, trigger: .manual, id: id)

@@ -23,16 +23,6 @@ final class TextPipelineTests: XCTestCase {
         XCTAssertEqual(FillerWordFilter.filter("It is basically, done"), "It is done")
     }
 
-    // MARK: Substitutions
-
-    func testSubstitutionIsWholeWordAndCaseInsensitive() {
-        let out = SubstitutionPass.apply("fontsake and Fontsakes", rules: ["fontsake": "Fontsake"])
-        XCTAssertEqual(out, "Fontsake and Fontsakes")
-    }
-
-    func testEmptyRulesLeaveTextAlone() {
-        XCTAssertEqual(SubstitutionPass.apply("hello", rules: [:]), "hello")
-    }
 
     // MARK: Titles
 

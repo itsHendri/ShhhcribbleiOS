@@ -225,14 +225,9 @@ struct SettingsView: View {
     }
 
     private func refreshCounts() {
-        hotwordCount = (UserDefaults.standard.array(forKey: "customHotwords") as? [String])?.count ?? 0
+        hotwordCount = VocabularyEdit.customWords().count
+        substitutionCount = VocabularyEdit.substitutions().count
         customFillerCount = (UserDefaults.standard.array(forKey: "customFillerWords") as? [String])?.count ?? 0
-        if let data = UserDefaults.standard.data(forKey: "substitutionRules"),
-           let dict = try? JSONDecoder().decode([String: String].self, from: data) {
-            substitutionCount = dict.count
-        } else {
-            substitutionCount = 0
-        }
     }
 
     private func modeLabel(_ mode: AsrMode) -> String {

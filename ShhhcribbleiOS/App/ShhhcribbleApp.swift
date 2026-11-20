@@ -1,5 +1,6 @@
 import ShhhcribbleShared
 import SwiftUI
+import ShhhcribbleCore
 import os
 
 private let diagLog = Logger(subsystem: "com.shhhcribble.diag", category: "app")
@@ -70,6 +71,9 @@ struct ShhhcribbleApp: App {
                     OnboardingView()
                 }
                 .onChange(of: scenePhase) { _, phase in
+                    // The widget or the keyboard may have written to the
+                    // library while the app was away.
+                    if phase == .active { SharedLibrary.store.reloadIfChangedElsewhere() }
                     // Only auto-stop on backgrounding when the recording was
                     // launched via URL scheme (e.g. Back Tap → Shortcut → app
                     // launches → user taps the "← Back to X" pill iOS shows

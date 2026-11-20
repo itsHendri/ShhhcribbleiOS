@@ -30,6 +30,11 @@ packages:
     url: https://github.com/FluidInference/FluidAudio.git
     # Exact pin. The Mac app must use the same version (see ECOSYSTEM.md).
     exactVersion: 0.18.3
+  # The library, text pipeline and sync shared with the Mac app. A local
+  # path: this repo builds only with the Mac repo checked out beside it
+  # (brands/shhhcribble/projects/mac-app).
+  ShhhcribbleCore:
+    path: ../mac-app/Core
 
 targets:
   ShhhcribbleShared:
@@ -107,6 +112,8 @@ targets:
         embed: true
       - package: FluidAudio
         product: FluidAudio
+      - package: ShhhcribbleCore
+        product: ShhhcribbleCore
       - target: ShhhcribbleWidget
         embed: true
 

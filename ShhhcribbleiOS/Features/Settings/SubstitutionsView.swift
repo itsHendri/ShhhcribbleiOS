@@ -1,18 +1,12 @@
 import SwiftUI
 
 struct SubstitutionsView: View {
-    @State private var rules: [Rule] = []
+    @State private var rules: [VocabularyEdit.Rule] = []
     @State private var newFind: String = ""
     @State private var newReplace: String = ""
     @FocusState private var newFocused: NewField?
 
     private enum NewField { case find, replace }
-
-    private struct Rule: Identifiable, Equatable {
-        let id = UUID()
-        var find: String
-        var replace: String
-    }
 
     var body: some View {
         Form {
@@ -87,36 +81,19 @@ struct SubstitutionsView: View {
         let find = newFind.trimmingCharacters(in: .whitespaces)
         let replace = newReplace.trimmingCharacters(in: .whitespaces)
         guard !find.isEmpty, !replace.isEmpty else { return }
-        rules.removeAll { $0.find.caseInsensitiveCompare(find) == .orderedSame }
-        rules.append(Rule(find: find, replace: replace))
-        rules.sort { $0.find.localizedCaseInsensitiveCompare($1.find) == .orderedAscending }
+        VocabularyEdit.add(find: find, replace: replace)
         newFind = ""
         newReplace = ""
         newFocused = .find
-        save()
+        load()
     }
 
     private func delete(at offsets: IndexSet) {
-        rules.remove(atOffsets: offsets)
-        save()
+        for index in offsets { VocabularyEdit.delete(id: rules[index].id) }
+        load()
     }
 
     private func load() {
-        guard let data = UserDefaults.standard.data(forKey: "substitutionRules"),
-              let dict = try? JSONDecoder().decode([String: String].self, from: data) else {
-            rules = []
-            return
-        }
-        rules = dict
-            .map { Rule(find: $0.key, replace: $0.value) }
-            .sorted { $0.find.localizedCaseInsensitiveCompare($1.find) == .orderedAscending }
-    }
-
-    private func save() {
-        var dict: [String: String] = [:]
-        for rule in rules { dict[rule.find] = rule.replace }
-        if let data = try? JSONEncoder().encode(dict) {
-            UserDefaults.standard.set(data, forKey: "substitutionRules")
-        }
+        rules = VocabularyEdit.substitutions()
     }
 }

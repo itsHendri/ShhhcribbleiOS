@@ -1,0 +1,117 @@
+import Combine
+import Foundation
+import ShhhcribbleCore
+
+/// Where the shared library lives on the phone, and the one store the app
+/// opens on it.
+///
+/// The database sits in the App Group container so the widget (and later the
+/// keyboard) can open the same file through `LibraryReader`. SQLite keeps
+/// three files side by side while it is open; they share this folder.
+@MainActor
+enum SharedLibrary {
+    nonisolated static let appGroup = "group.com.shhhcribble"
+
+    /// The app's store. Opening it creates the file and brings its schema up
+    /// to date; only the app does that, never an extension.
+    static let store: TranscriptStore = {
+        let store = TranscriptStore.makeDefault(at: databaseURL(), runLegacyMacMigrations: false)
+        store.observeOtherProcesses()
+        VocabularyMigration.runIfNeeded(into: store)
+        Vocabulary.shared.follow(store)
+        return store
+    }()
+
+    nonisolated static func databaseURL() -> URL {
+        // Tests are hosted by the app. They must never open the real library.
+        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
+            let dir = FileManager.default.temporaryDirectory
+                .appendingPathComponent("shhhcribble-tests-\(ProcessInfo.processInfo.processIdentifier)", isDirectory: true)
+            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            return dir.appendingPathComponent("library.sqlite")
+        }
+        let fm = FileManager.default
+        let base = fm.containerURL(forSecurityApplicationGroupIdentifier: appGroup)
+            ?? fm.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        let dir = base.appendingPathComponent("Library/Shhhcribble", isDirectory: true)
+        // Readable after the first unlock since boot, so the widget can show
+        // tasks on a locked phone. New files in the folder inherit this.
+        try? fm.createDirectory(
+            at: dir,
+            withIntermediateDirectories: true,
+            attributes: [.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication]
+        )
+        return dir.appendingPathComponent("library.sqlite")
+    }
+}
+
+/// Notes kept in the shared library (`ShhhcribbleCore`), the same store the
+/// Mac app uses. The only file besides `Vocabulary.swift` that knows the
+/// core's types; everything else goes through `Library`.
+///
+/// The phone's notes screen shows every note that is not a task. Tasks get
+/// their own screen.
+@MainActor
+final class CoreBackend: LibraryBackend {
+    private let store: TranscriptStore
+    private var watch: AnyCancellable?
+
+    var onExternalChange: (() -> Void)?
+
+    init(store: TranscriptStore) {
+        self.store = store
+        // `$notes` fires before the array changes, so read on the next turn.
+        watch = store.$notes.dropFirst().sink { [weak self] _ in
+            DispatchQueue.main.async { self?.onExternalChange?() }
+        }
+    }
+
+    func all() -> [LibraryNote] {
+        store.notes.filter { !$0.isTask }.map(Self.libraryNote)
+    }
+
+    func insert(_ note: LibraryNote) -> Bool {
+        var row = Note(id: note.id, createdAt: note.createdAt, modifiedAt: note.createdAt, text: note.transcript)
+        row.tags = note.tags
+        row.origin = .phone
+        row.originDetail = note.trigger.rawValue
+        row.rawText = note.rawTranscript
+        row.durationSec = note.duration
+        return store.addNoteIfAbsent(row)
+    }
+
+    func update(_ note: LibraryNote) {
+        guard var row = store.notes.first(where: { $0.id == note.id }) else { return }
+        guard row.text != note.transcript || row.tags != note.tags else { return }
+        if row.text != note.transcript {
+            row.text = note.transcript
+            // Plain text is the truth. The Mac's styling no longer matches
+            // it, so it goes (agreed with the Mac track).
+            row.richText = nil
+        }
+        row.tags = note.tags
+        store.updateNote(row)
+    }
+
+    func delete(id: UUID) {
+        store.deleteNote(id: id)
+    }
+
+    func deleteAll() {
+        for note in store.notes where !note.isTask {
+            store.deleteNote(id: note.id)
+        }
+    }
+
+    private static func libraryNote(_ row: Note) -> LibraryNote {
+        LibraryNote(
+            id: row.id,
+            transcript: row.text,
+            rawTranscript: row.rawText,
+            createdAt: row.createdAt,
+            duration: row.durationSec ?? 0,
+            trigger: row.originDetail.flatMap(TriggerSource.init(rawValue:)) ?? .manual,
+            tags: row.tags
+        )
+    }
+}

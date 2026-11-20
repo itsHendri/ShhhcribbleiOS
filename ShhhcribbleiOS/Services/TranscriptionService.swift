@@ -319,7 +319,7 @@ actor TranscriptionService {
         resumeFinish(text)
     }
 
-    /// Real abort — drop audio, skip transcription, skip SwiftData write,
+    /// Real abort — drop audio, skip transcription, skip the library write,
     /// restore clipboard immediately. Invoked by the in-app Cancel button.
     func cancelRecording() async {
         guard recording, !stopRequested else {
@@ -415,7 +415,7 @@ actor TranscriptionService {
             let raw = try await transcribeFile(at: url)
             let filterOn = UserDefaults.standard.object(forKey: "filterFillerWords") as? Bool ?? true
             let afterFiller = filterOn ? FillerWordFilter.filter(raw) : raw
-            let text = SubstitutionPass.apply(afterFiller, rules: SubstitutionPass.currentRules())
+            let text = Vocabulary.shared.apply(to: afterFiller)
             guard !text.isEmpty else {
                 await TranscriptionStatus.shared.event("File import: no speech")
                 await MainActor.run {
@@ -429,7 +429,8 @@ actor TranscriptionService {
                     duration: duration,
                     trigger: .file,
                     id: id,
-                    createdAt: createdAt
+                    createdAt: createdAt,
+                    rawTranscript: raw
                 )
             }
             await TranscriptionStatus.shared.event(inserted ? "File import: saved" : "File import: already present")
@@ -720,7 +721,7 @@ actor TranscriptionService {
 
         let filterOn = UserDefaults.standard.object(forKey: "filterFillerWords") as? Bool ?? true
         let afterFiller = filterOn ? FillerWordFilter.filter(transcript) : transcript
-        let filtered = SubstitutionPass.apply(afterFiller, rules: SubstitutionPass.currentRules())
+        let filtered = Vocabulary.shared.apply(to: afterFiller)
         guard !filtered.isEmpty else {
             await TranscriptionStatus.shared.event("Empty transcript — no speech detected")
             await MainActor.run {
@@ -736,7 +737,7 @@ actor TranscriptionService {
         let duration = recordingStartedAt.map { Date().timeIntervalSince($0) } ?? 0
         let trigger = currentTrigger
         let target = appendTargetId
-        await commit(filtered, duration: duration, trigger: trigger, appendingTo: target)
+        await commit(filtered, raw: transcript, duration: duration, trigger: trigger, appendingTo: target)
         await TranscriptionStatus.shared.event(target == nil ? "Copied to clipboard" : "Added to note")
         await maybeAutoBackground()
     }
@@ -762,7 +763,7 @@ actor TranscriptionService {
             guard !text.isEmpty else { return }
             let filterOn = UserDefaults.standard.object(forKey: "filterFillerWords") as? Bool ?? true
             let afterFiller = filterOn ? FillerWordFilter.filter(text) : text
-            let filtered = SubstitutionPass.apply(afterFiller, rules: SubstitutionPass.currentRules())
+            let filtered = Vocabulary.shared.apply(to: afterFiller)
             // In-app overlay gets the full transcript so the typewriter
             // can extend it smoothly. The Live Activity gets only a bounded
             // tail because widget update payloads are rate-limited and the
@@ -824,7 +825,7 @@ actor TranscriptionService {
         // pill, the clipboard already holds the latest transcript.
         let filterOn = UserDefaults.standard.object(forKey: "filterFillerWords") as? Bool ?? true
         let afterFiller = filterOn ? FillerWordFilter.filter(partial) : partial
-        let filtered = SubstitutionPass.apply(afterFiller, rules: SubstitutionPass.currentRules())
+        let filtered = Vocabulary.shared.apply(to: afterFiller)
         await MainActor.run {
             ShhhcribbleActivityManager.shared.update(snippet: liveActivitySnippet)
             TranscriptionStatus.shared.partialSnippet = filtered
@@ -842,6 +843,7 @@ actor TranscriptionService {
     @MainActor
     private func commit(
         _ text: String,
+        raw: String,
         duration: TimeInterval,
         trigger: TriggerSource,
         appendingTo: UUID?
@@ -854,7 +856,8 @@ actor TranscriptionService {
             Library.shared.insert(
                 transcript: text,
                 duration: duration,
-                trigger: trigger
+                trigger: trigger,
+                rawTranscript: raw
             )
             // Toast handles the success haptic so we don't double up.
             ToastManager.shared.show("Copied to clipboard", systemImage: "doc.on.doc.fill")

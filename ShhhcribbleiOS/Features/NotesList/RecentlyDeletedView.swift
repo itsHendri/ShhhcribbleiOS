@@ -18,14 +18,23 @@ struct RecentlyDeletedView: View {
                             .foregroundStyle(.secondary)
                     }
                     ForEach(library.trashed) { note in
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(note.title)
-                                .lineLimit(2)
-                            Text(caption(note))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                        HStack(spacing: 12) {
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(note.title)
+                                    .lineLimit(2)
+                                Text(caption(note))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            // Visible, not only a swipe (Hendri, 2026-11-21:
+                            // "only had a recover all action though?").
+                            Button("Recover") { recover(note) }
+                                .buttonStyle(.bordered)
+                                .frame(minHeight: 44)
+                                .accessibilityLabel("Recover \(note.title)")
                         }
-                        .frame(minHeight: 44, alignment: .leading)
+                        .frame(minHeight: 44)
                         .swipeActions(edge: .leading, allowsFullSwipe: true) {
                             Button {
                                 recover(note)
@@ -51,7 +60,7 @@ struct RecentlyDeletedView: View {
                     }
                 } footer: {
                     if !library.trashed.isEmpty {
-                        Text("Notes are removed for good after 30 days, on this iPhone and your Mac. Swipe right to recover one.")
+                        Text("Notes are removed for good after 30 days, on this iPhone and your Mac.")
                     }
                 }
             }

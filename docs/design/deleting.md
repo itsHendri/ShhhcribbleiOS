@@ -27,6 +27,8 @@ What they agree on: a single delete gets an Undo, not a question; deleting many 
 ## Built (2026-11-20)
 - The bin is in the shared library (Mac track, core commit `16f09ba`, schema 19). Phone deletes and Clear All go to it; Undo takes them back out. The Recently Deleted screen: days left on each note, swipe right to recover, swipe left to delete now, Recover All, Delete All Now with a confirm. Checked in the simulator. The Recently Deleted row at the top of the list, and Select mode (Select All, Delete N, Done), built and checked in the simulator the same day.
 
+- 2026-11-21: each note in Recently Deleted has a visible Recover button. Hendri, after the two-device test: "only had a recover all action though?" Recovering one had only been a swipe.
+
 ## Open
 - Nothing for now.
 - The Mac still deletes for good and has no bin screen yet (the Mac track's call). Notes binned on the phone leave the Mac's lists.

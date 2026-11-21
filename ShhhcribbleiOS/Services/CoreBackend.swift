@@ -17,6 +17,7 @@ enum SharedLibrary {
         store.observeOtherProcesses()
         #if DEBUG
         NoteDetailsRestore.runIfPresent(store: store)
+        NoteDetailsRestore.resendIfPresent(store: store)
         #endif
         VocabularyMigration.runIfNeeded(into: store)
         Vocabulary.shared.follow(store)
@@ -183,6 +184,25 @@ enum NoteDetailsRestore {
         }
         try? fm.moveItem(at: file, to: docs.appendingPathComponent("restore-note-details.done.json"))
         UserDefaults.standard.set(restored, forKey: "debugNoteDetailsRestored")
+    }
+
+    /// Re-saves the notes listed in `resend-note-ids.json` (an array of
+    /// ids) as a fresh edit, so sync sees a change and sends them. Used once,
+    /// for notes repaired before the core sent kept fields up (10b435a).
+    static func resendIfPresent(store: TranscriptStore) {
+        let fm = FileManager.default
+        guard let docs = fm.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
+        let file = docs.appendingPathComponent("resend-note-ids.json")
+        guard let data = try? Data(contentsOf: file),
+              let ids = try? JSONDecoder().decode([UUID].self, from: data) else { return }
+        var sent = 0
+        for id in ids {
+            guard let row = store.notes.first(where: { $0.id == id }) else { continue }
+            store.updateNote(row)
+            sent += 1
+        }
+        try? fm.moveItem(at: file, to: docs.appendingPathComponent("resend-note-ids.done.json"))
+        UserDefaults.standard.set(sent, forKey: "debugNotesResent")
     }
 }
 #endif

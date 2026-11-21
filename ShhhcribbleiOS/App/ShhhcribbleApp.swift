@@ -83,7 +83,9 @@ struct ShhhcribbleApp: App {
                     // library while the app was away.
                     if phase == .active {
                         SharedLibrary.store.reloadIfChangedElsewhere()
-                        SyncService.shared.syncNow()
+                        SyncService.shared.appBecameActive()
+                    } else {
+                        SyncService.shared.appLeftForeground()
                     }
                     // Only auto-stop on backgrounding when the recording was
                     // launched via URL scheme (e.g. Back Tap → Shortcut → app

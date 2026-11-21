@@ -75,6 +75,25 @@ final class SyncService: ObservableObject {
         Task { await sync.syncNow() }
     }
 
+    /// iCloud's change pushes did not always reach the phone in testing
+    /// (2026-11-21: a tick on the Mac waited until the app came to the
+    /// front). While the app is open, fetch once a minute as well, so a
+    /// change from the Mac never waits on a push that does not come.
+    private var foregroundTimer: Timer?
+
+    func appBecameActive() {
+        syncNow()
+        foregroundTimer?.invalidate()
+        foregroundTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { _ in
+            Task { @MainActor in SyncService.shared.syncNow() }
+        }
+    }
+
+    func appLeftForeground() {
+        foregroundTimer?.invalidate()
+        foregroundTimer = nil
+    }
+
     func confirmHeldDeletes() { sync.confirmHeldDeletes() }
     func restoreHeldRows() { Task { await sync.restoreHeldRows() } }
 

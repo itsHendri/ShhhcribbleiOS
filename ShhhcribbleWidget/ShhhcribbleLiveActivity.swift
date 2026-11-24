@@ -36,7 +36,7 @@ struct ShhhcribbleLiveActivity: Widget {
                 ActivityButton(intent: CancelRecordingIntent(), symbol: "xmark",
                                label: "Cancel recording", fill: Color.white.opacity(0.18))
                 ActivityButton(intent: StopRecordingIntent(), symbol: "stop.fill",
-                               label: "Stop and save", fill: brandBlue)
+                               label: "Stop and save", fill: Color.accentFill)
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
@@ -57,7 +57,7 @@ struct ShhhcribbleLiveActivity: Widget {
                         ActivityButton(intent: CancelRecordingIntent(), symbol: "xmark",
                                        label: "Cancel recording", fill: Color.white.opacity(0.18))
                         ActivityButton(intent: StopRecordingIntent(), symbol: "stop.fill",
-                                       label: "Stop and save", fill: brandBlue)
+                                       label: "Stop and save", fill: Color.accentFill)
                     }
                 }
                 DynamicIslandExpandedRegion(.center) {

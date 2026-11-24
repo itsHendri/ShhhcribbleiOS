@@ -78,7 +78,7 @@ struct RecordingOverlayView: View {
                     .frame(height: 56)
                     .background(
                         RoundedRectangle(cornerRadius: 28, style: .continuous)
-                            .fill(Color.accentColor)
+                            .fill(Color.accentFill)
                     )
                 }
             }
@@ -209,7 +209,7 @@ private struct ErrorCard: View {
                     .frame(height: 56)
                     .background(
                         RoundedRectangle(cornerRadius: 28, style: .continuous)
-                            .fill(Color.accentColor)
+                            .fill(Color.accentFill)
                     )
             }
         case .modelLoadFailed, .other:
@@ -278,7 +278,7 @@ private struct RetryButton: View {
             .frame(height: 56)
             .background(
                 RoundedRectangle(cornerRadius: 28, style: .continuous)
-                    .fill(Color.accentColor)
+                    .fill(Color.accentFill)
             )
         }
         .disabled(reloading)

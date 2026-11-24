@@ -218,7 +218,7 @@ struct TasksWidgetView: View {
             Spacer()
             Link(destination: URL(string: "shhhcribble://tasks")!) {
                 ZStack {
-                    Circle().fill(WidgetLook.accent).widgetAccentable()
+                    Circle().fill(Color.accentFill).widgetAccentable()
                     ScribbleMark()
                         .stroke(WidgetLook.onAccent,
                                 style: StrokeStyle(lineWidth: 3.4, lineCap: .round, lineJoin: .round))
@@ -342,7 +342,7 @@ struct CaptureWidgetView: View {
 
             Link(destination: URL(string: "shhhcribble://widget-record")!) {
                 ZStack {
-                    Circle().fill(WidgetLook.accent).widgetAccentable()
+                    Circle().fill(Color.accentFill).widgetAccentable()
                     Image(systemName: "mic.fill")
                         .font(.system(size: 26, weight: .semibold))
                         .foregroundStyle(WidgetLook.onAccent)

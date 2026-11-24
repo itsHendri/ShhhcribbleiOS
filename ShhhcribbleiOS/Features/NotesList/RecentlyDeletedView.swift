@@ -33,6 +33,7 @@ struct RecentlyDeletedView: View {
                             // Recently Deleted (Hendri, 2026-11-24).
                             Button("Restore") { restore(note) }
                                 .buttonStyle(.bordered)
+                                .foregroundStyle(Color.accentOnGrey)
                                 .frame(minHeight: 44)
                                 .accessibilityLabel("Restore \(note.title)")
                         }

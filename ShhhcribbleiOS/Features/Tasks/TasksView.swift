@@ -360,6 +360,7 @@ private struct MeetingCard: View {
                     .frame(maxWidth: .infinity, minHeight: 44)
             }
             .buttonStyle(.borderedProminent)
+            .tint(.accentFill)
             .disabled(meeting.start == nil || isAdding)
             HStack(spacing: 8) {
                 Button(action: change) {
@@ -370,6 +371,7 @@ private struct MeetingCard: View {
                 }
             }
             .buttonStyle(.bordered)
+            .foregroundStyle(Color.accentOnGrey)
         }
         .padding(12)
         .overlay(

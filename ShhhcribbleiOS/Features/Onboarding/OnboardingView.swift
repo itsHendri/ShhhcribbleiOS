@@ -178,7 +178,7 @@ private struct OnboardingPageScaffold<Content: View>: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
-                .tint(primaryTint)
+                .tint(.accentFill)
             }
             .padding(.horizontal, 28)
             .padding(.bottom, 56) // leave space for page indicator dots

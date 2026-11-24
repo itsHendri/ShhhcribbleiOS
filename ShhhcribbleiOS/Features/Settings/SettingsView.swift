@@ -405,6 +405,7 @@ struct HeldDeletesCard: View {
             HStack {
                 Button("Bring Them Back") { sync.restoreHeldRows() }
                     .buttonStyle(.borderedProminent)
+                    .tint(.accentFill)
                 Spacer()
                 Button("Delete Everywhere", role: .destructive) { sync.confirmHeldDeletes() }
                     .buttonStyle(.bordered)

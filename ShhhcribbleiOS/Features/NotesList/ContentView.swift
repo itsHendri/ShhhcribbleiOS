@@ -186,8 +186,8 @@ private struct StartRecordingButton: View {
                 .frame(width: 56, height: 56)
                 .background(
                     Circle().fill(isEnabled
-                                  ? Color.accentColor
-                                  : Color.accentColor.opacity(0.4))
+                                  ? Color.accentFill
+                                  : Color.accentFill.opacity(0.4))
                 )
                 .shadow(color: .black.opacity(0.22), radius: 8, y: 3)
         }

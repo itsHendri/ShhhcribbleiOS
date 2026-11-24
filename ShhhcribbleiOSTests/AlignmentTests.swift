@@ -70,4 +70,16 @@ final class AlignmentTests: XCTestCase {
         XCTAssertEqual(list.meetings.first?.title, "Ana and Rui")
         XCTAssertEqual(list.meetings.first?.start, at(25, 10))
     }
+
+    func testASummaryToDoIsAddedOnce() {
+        let store = TranscriptStore(path: ":memory:")
+        let list = TaskList(store: store)
+        let noteID = UUID()
+        XCTAssertFalse(list.isInTasks(noteID: noteID, item: "Email Anna"))
+        let first = list.addFromSummary(noteID: noteID, item: "Email Anna")
+        let second = list.addFromSummary(noteID: noteID, item: "Email Anna")
+        XCTAssertEqual(first, second)
+        XCTAssertTrue(list.isInTasks(noteID: noteID, item: "Email Anna"))
+        XCTAssertEqual(store.notes.filter(\.isTask).count, 1)
+    }
 }

@@ -167,6 +167,17 @@ final class TaskList: ObservableObject {
         store.restoreNote(id: id)
     }
 
+    /// A to-do from a note's summary, linked to the note: adding the same
+    /// item again, here or on the Mac, returns the task already there.
+    @discardableResult
+    func addFromSummary(noteID: UUID, item: String) -> UUID {
+        store.promoteActionItem(transcriptID: noteID, item: item).id
+    }
+
+    func isInTasks(noteID: UUID, item: String) -> Bool {
+        store.noteForActionItem(transcriptID: noteID, item: item) != nil
+    }
+
     // MARK: Meetings
 
     /// Adds a spoken meeting, waiting for a yes.

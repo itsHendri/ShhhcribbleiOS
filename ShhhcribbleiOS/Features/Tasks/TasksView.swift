@@ -1,4 +1,5 @@
 import Combine
+import ShhhcribbleCore
 import SwiftUI
 
 /// Tasks and reminders: what is overdue, due today, coming up, undated, and
@@ -456,17 +457,9 @@ private struct MeetingEditView: View {
     }
 }
 
-/// Overdue's colours, the same values as the widget and the Mac (Hendri's
-/// look pick, 2026-11-24). Until the core has a shared look file.
+/// Overdue's colours, from the core's `Look`, the same as the widget and
+/// the Mac (Hendri's look pick, 2026-11-24).
 enum OverdueLook {
-    static let fill = Color(UIColor { traits in
-        traits.userInterfaceStyle == .dark
-            ? UIColor(red: 0.231, green: 0.039, blue: 0.016, alpha: 1) // #3B0A04
-            : UIColor(red: 0.992, green: 0.890, blue: 0.871, alpha: 1) // #FDE3DE
-    })
-    static let text = Color(UIColor { traits in
-        traits.userInterfaceStyle == .dark
-            ? UIColor(red: 1.0, green: 0.706, blue: 0.659, alpha: 1)   // #FFB4A8
-            : UIColor(red: 0.541, green: 0.122, blue: 0.067, alpha: 1) // #8A1F11
-    })
+    static let fill = Color(look: Look.overdueFill)
+    static let text = Color(look: Look.overdueText)
 }

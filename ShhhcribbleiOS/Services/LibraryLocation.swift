@@ -60,3 +60,22 @@ enum DueLabel {
         return "\(day) \(time)"
     }
 }
+
+#if canImport(SwiftUI)
+import SwiftUI
+import UIKit
+import ShhhcribbleCore
+
+extension Color {
+    /// A dynamic colour from one of the core's shared `Look` values: its
+    /// light value in light mode, its dark value in dark mode. Compiled into
+    /// the app and the widget.
+    init(look: LookColor) {
+        self.init(UIColor { traits in
+            let hex = traits.userInterfaceStyle == .dark ? look.dark : look.light
+            let c = LookColor.components(hex)
+            return UIColor(red: c.red, green: c.green, blue: c.blue, alpha: 1)
+        })
+    }
+}
+#endif

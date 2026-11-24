@@ -13,29 +13,16 @@ import WidgetKit
 // MARK: - Look
 
 enum WidgetLook {
-    /// The one blue of the Mac, the iPhone and the widget (Hendri's pick,
-    /// 2026-11-24): #0064EB in light, #3D8BFF in dark. Above 4.5:1 on the
-    /// system backgrounds in both (#006AFA was 4.24:1 on #F2F2F7).
-    static let accent = Color(UIColor { traits in
-        traits.userInterfaceStyle == .dark
-            ? UIColor(red: 0.239, green: 0.545, blue: 1.0, alpha: 1)   // #3D8BFF
-            : UIColor(red: 0.0, green: 0.392, blue: 0.922, alpha: 1)   // #0064EB
-    })
+    /// The one blue of the Mac, the iPhone and the widget, from the core's
+    /// `Look` (Hendri's pick, 2026-11-24).
+    static let accent = Color(look: Look.accent)
     /// Icons on the blue: white, 5.2:1 in light and 3.3:1 in dark (icons
     /// need 3:1).
     static let onAccent = Color.white
     /// Overdue: a soft red fill with dark red words, always the word
     /// "Overdue", never the colour alone.
-    static let overdueFill = Color(UIColor { traits in
-        traits.userInterfaceStyle == .dark
-            ? UIColor(red: 0.231, green: 0.039, blue: 0.016, alpha: 1) // #3B0A04
-            : UIColor(red: 0.992, green: 0.890, blue: 0.871, alpha: 1) // #FDE3DE
-    })
-    static let overdueText = Color(UIColor { traits in
-        traits.userInterfaceStyle == .dark
-            ? UIColor(red: 1.0, green: 0.706, blue: 0.659, alpha: 1)   // #FFB4A8
-            : UIColor(red: 0.541, green: 0.122, blue: 0.067, alpha: 1) // #8A1F11
-    })
+    static let overdueFill = Color(look: Look.overdueFill)
+    static let overdueText = Color(look: Look.overdueText)
 }
 
 /// The scribble from the app icon, redrawn as a line.

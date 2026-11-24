@@ -298,6 +298,7 @@ private struct FlowLayout: Layout {
 private struct SummaryBlock: View {
     let note: LibraryNote
     @ObservedObject private var summaries = Summaries.shared
+    @ObservedObject private var tasks = TaskList.shared
 
     private var working: Bool { summaries.working.contains(note.id) }
 
@@ -326,17 +327,26 @@ private struct SummaryBlock: View {
                                 }
                             }
                             Spacer(minLength: 0)
-                            Button {
-                                TaskList.shared.add(text: item.text)
-                                ToastManager.shared.show("Added to Tasks", systemImage: "checklist")
-                            } label: {
-                                Image(systemName: "plus.circle")
-                                    .font(.system(size: 20))
-                                    .frame(width: 44, height: 44)
+                            // Linked to this note, so a second tap (here or
+                            // on the Mac) never makes a second task.
+                            if tasks.isInTasks(noteID: note.id, item: item.text) {
+                                Label("In Tasks", systemImage: "checkmark.circle.fill")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                                    .frame(minHeight: 44)
+                            } else {
+                                Button {
+                                    tasks.addFromSummary(noteID: note.id, item: item.text)
+                                    ToastManager.shared.show("Added to Tasks", systemImage: "checklist")
+                                } label: {
+                                    Image(systemName: "plus.circle")
+                                        .font(.system(size: 20))
+                                        .frame(width: 44, height: 44)
+                                }
+                                .buttonStyle(.plain)
+                                .foregroundStyle(Color.accentColor)
+                                .accessibilityLabel("Add to Tasks: \(item.text)")
                             }
-                            .buttonStyle(.plain)
-                            .foregroundStyle(Color.accentColor)
-                            .accessibilityLabel("Add to Tasks: \(item.text)")
                         }
                     }
                 }

@@ -85,9 +85,9 @@ extension Color {
     /// The fill of a filled blue button or round button: the light-mode blue
     /// in both modes, so white words on it reach 5.2:1 (Hendri's pick C,
     /// 2026-11-24; white on the dark-mode blue was 3.3:1).
-    static let accentFill = Color(look: LookColor(light: Look.accent.light, dark: Look.accent.light))
+    static let accentFill = Color(look: Look.accentFill)
     /// Blue words on a grey button: lighter in dark mode, 5:1 on the grey
     /// (the dark-mode blue was 4.2:1 there).
-    static let accentOnGrey = Color(look: LookColor(light: Look.accent.light, dark: 0x5A9CFF))
+    static let accentOnGrey = Color(look: Look.accentOnGrey)
 }
 #endif

@@ -14,14 +14,14 @@ import WidgetKit
 
 enum WidgetLook {
     /// The one blue of the Mac, the iPhone and the widget (Hendri's pick,
-    /// 2026-11-24): #006AFA in light, #3D8BFF in dark. Above 4.5:1 on the
-    /// system widget background in both.
+    /// 2026-11-24): #0064EB in light, #3D8BFF in dark. Above 4.5:1 on the
+    /// system backgrounds in both (#006AFA was 4.24:1 on #F2F2F7).
     static let accent = Color(UIColor { traits in
         traits.userInterfaceStyle == .dark
             ? UIColor(red: 0.239, green: 0.545, blue: 1.0, alpha: 1)   // #3D8BFF
-            : UIColor(red: 0.0, green: 0.416, blue: 0.980, alpha: 1)   // #006AFA
+            : UIColor(red: 0.0, green: 0.392, blue: 0.922, alpha: 1)   // #0064EB
     })
-    /// Icons on the blue: white, 4.7:1 in light and 3.3:1 in dark (icons
+    /// Icons on the blue: white, 5.2:1 in light and 3.3:1 in dark (icons
     /// need 3:1).
     static let onAccent = Color.white
     /// Overdue: a soft red fill with dark red words, always the word

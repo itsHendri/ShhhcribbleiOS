@@ -116,7 +116,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.shhhcribble.ios
         # The one blue of the Mac, the iPhone and the widget (Hendri,
-        # 2026-11-24): #006AFA light, #3D8BFF dark.
+        # 2026-11-24): #0064EB light, #3D8BFF dark.
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         TARGETED_DEVICE_FAMILY: "1"
         SWIFT_VERSION: "5.9"

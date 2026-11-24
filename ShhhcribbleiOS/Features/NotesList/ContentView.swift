@@ -300,35 +300,78 @@ struct ToastOverlay: View {
     @ObservedObject private var manager = ToastManager.shared
 
     var body: some View {
-        VStack {
+        ZStack {
             if let toast = manager.current {
-                HStack(spacing: 10) {
-                    Image(systemName: toast.systemImage)
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(Color(red: 0.25, green: 0.55, blue: 1.0))
-                    Text(toast.message)
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(.primary)
-                    if let label = toast.actionLabel {
-                        Button(label) { manager.runAction() }
-                            .font(.system(size: 14, weight: .bold))
-                            .frame(minWidth: 44, minHeight: 44)
-                            .contentShape(Rectangle())
-                    }
+                if let label = toast.actionLabel {
+                    UndoLine(message: toast.message, label: label) { manager.runAction() }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                        .id(toast.id)
+                } else {
+                    confirmation(toast)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                        .id(toast.id)
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, toast.actionLabel == nil ? 12 : 0)
-                .background(Capsule().fill(.regularMaterial))
-                .overlay(Capsule().strokeBorder(.white.opacity(0.06), lineWidth: 0.5))
-                .shadow(color: .black.opacity(0.22), radius: 14, y: 6)
-                .padding(.top, 12)
-                .transition(.move(edge: .top).combined(with: .opacity))
-                .id(toast.id)
             }
-            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         // Only a toast with a button takes touches.
         .allowsHitTesting(manager.current?.actionLabel != nil)
+    }
+
+    private func confirmation(_ toast: ToastManager.Toast) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: toast.systemImage)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Color(red: 0.25, green: 0.55, blue: 1.0))
+            Text(toast.message)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(.primary)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(Capsule().fill(.regularMaterial))
+        .overlay(Capsule().strokeBorder(.white.opacity(0.06), lineWidth: 0.5))
+        .shadow(color: .black.opacity(0.22), radius: 14, y: 6)
+        .padding(.top, 12)
+        .transition(.move(edge: .top).combined(with: .opacity))
+    }
+}
+
+/// The dark line at the bottom that follows a delete or a spoken task:
+/// "Moved to Recently Deleted · Undo", above the tab bar (Hendri's pick,
+/// 2026-11-24, the same on the Mac). Inverted colours, so it reads as dark
+/// in light mode and light in dark mode; Undo is bold and underlined, never
+/// told apart by colour alone.
+private struct UndoLine: View {
+    let message: String
+    let label: String
+    let action: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Text(message)
+                .font(.system(size: 15, weight: .medium))
+                .lineLimit(2)
+            Button(action: action) {
+                Text(label)
+                    .font(.system(size: 15, weight: .bold))
+                    .underline()
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        }
+        .foregroundStyle(Color(.systemBackground))
+        .padding(.leading, 18)
+        .padding(.trailing, 8)
+        .background(Capsule().fill(Color(.label)))
+        .shadow(color: .black.opacity(0.22), radius: 12, y: 4)
+        .padding(.horizontal, 16)
+        // Clears the tab pill and the play button.
+        .padding(.bottom, 84)
+        .transition(.move(edge: .bottom).combined(with: .opacity))
+        .accessibilityElement(children: .contain)
+        .onAppear {
+            AccessibilityNotification.Announcement("\(message). \(label) is available.").post()
+        }
     }
 }

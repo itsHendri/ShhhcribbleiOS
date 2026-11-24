@@ -879,6 +879,21 @@ actor TranscriptionService {
         if let id = appendingTo {
             Library.shared.append(transcript: text, to: id)
             ToastManager.shared.show("Added to note", systemImage: "text.append")
+        } else if case .meeting(let title, let start, let end, let allDay) =
+                    SpokenIntent.parse(text, now: Date(), calendar: .current) {
+            // "Meeting, ...": a card at the top of Tasks waiting for a yes.
+            // Nothing reaches the calendar before Add to Calendar.
+            let id = TaskList.shared.addMeeting(
+                title: title, start: start, end: end, allDay: allDay,
+                spokenText: raw, trigger: trigger, duration: duration
+            )
+            ToastManager.shared.show(
+                "Meeting to confirm in Tasks",
+                systemImage: "calendar",
+                actionLabel: "Undo"
+            ) {
+                TaskList.shared.notAMeeting(id: id, text: text)
+            }
         } else if case .task(let body, let due, let allDay) =
                     SpokenIntent.parse(text, now: Date(), calendar: .current) {
             // "Reminder, ..." or "To-do, ...": a task at once, with one tap

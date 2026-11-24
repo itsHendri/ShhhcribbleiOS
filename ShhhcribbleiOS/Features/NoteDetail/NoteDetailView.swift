@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct NoteDetailView: View {
     @Environment(\.dismiss) private var dismiss
@@ -24,7 +25,6 @@ struct NoteDetailView: View {
             }
         )
     }
-    @State private var showDeleteConfirm = false
     @State private var isEditing: Bool = true
 
     var body: some View {
@@ -73,14 +73,28 @@ struct NoteDetailView: View {
         .navigationTitle("Note")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            // Copy lives here, not on the list's rows (Hendri, 2026-11-24).
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    UIPasteboard.general.string = note.transcript
+                    ToastManager.shared.show("Copied to clipboard", systemImage: "doc.on.doc.fill")
+                } label: {
+                    Image(systemName: "doc.on.doc")
+                }
+                .accessibilityLabel("Copy")
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 ShareLink(item: note.transcript) {
                     Image(systemName: "square.and.arrow.up")
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
+                // No question first: the note goes to Recently Deleted with
+                // an Undo line, as everywhere else (Hendri, 2026-11-24).
                 Button(role: .destructive) {
-                    showDeleteConfirm = true
+                    library.delete(id: noteID)
+                    NotesListView.offerUndo(count: 1)
+                    dismiss()
                 } label: {
                     Image(systemName: "trash")
                 }
@@ -95,18 +109,6 @@ struct NoteDetailView: View {
         }
         .onDisappear {
             NoteFocus.shared.activeNoteId = nil
-        }
-        .confirmationDialog(
-            "Delete this note?",
-            isPresented: $showDeleteConfirm,
-            titleVisibility: .visible
-        ) {
-            Button("Delete", role: .destructive) {
-                library.delete(id: noteID)
-                NotesListView.offerUndo(count: 1)
-                dismiss()
-            }
-            Button("Cancel", role: .cancel) {}
         }
     }
 

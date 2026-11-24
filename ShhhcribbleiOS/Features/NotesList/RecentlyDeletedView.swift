@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Notes deleted in the last 30 days, on this iPhone and the Mac. Each one
-/// can be recovered; after 30 days the library removes it for good.
+/// can be restored; after 30 days the library removes it for good.
 /// Design: docs/design/deleting.md, the bin board on the canvas.
 struct RecentlyDeletedView: View {
     @ObservedObject private var library = Library.shared
@@ -28,18 +28,20 @@ struct RecentlyDeletedView: View {
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                             // Visible, not only a swipe (Hendri, 2026-11-21:
-                            // "only had a recover all action though?").
-                            Button("Recover") { recover(note) }
+                            // "only had a recover all action though?"). Words
+                            // as on the Mac: Restore, Delete Now, Empty
+                            // Recently Deleted (Hendri, 2026-11-24).
+                            Button("Restore") { restore(note) }
                                 .buttonStyle(.bordered)
                                 .frame(minHeight: 44)
-                                .accessibilityLabel("Recover \(note.title)")
+                                .accessibilityLabel("Restore \(note.title)")
                         }
                         .frame(minHeight: 44)
                         .swipeActions(edge: .leading, allowsFullSwipe: true) {
                             Button {
-                                recover(note)
+                                restore(note)
                             } label: {
-                                Label("Recover", systemImage: "arrow.uturn.backward")
+                                Label("Restore", systemImage: "arrow.uturn.backward")
                             }
                             .tint(.accentColor)
                         }
@@ -51,12 +53,12 @@ struct RecentlyDeletedView: View {
                             }
                         }
                         .contextMenu {
-                            Button("Recover", systemImage: "arrow.uturn.backward") { recover(note) }
+                            Button("Restore", systemImage: "arrow.uturn.backward") { restore(note) }
                             Button("Delete Now", systemImage: "trash", role: .destructive) {
                                 library.deleteForever(ids: [note.id])
                             }
                         }
-                        .accessibilityAction(named: "Recover") { recover(note) }
+                        .accessibilityAction(named: "Restore") { restore(note) }
                     }
                 } footer: {
                     if !library.trashed.isEmpty {
@@ -71,37 +73,38 @@ struct RecentlyDeletedView: View {
                     Button("Done") { dismiss() }
                 }
                 ToolbarItemGroup(placement: .bottomBar) {
-                    Button("Recover All") {
+                    Button("Restore All") {
                         let count = library.trashed.count
                         library.restoreAll()
-                        ToastManager.shared.show(count == 1 ? "Note recovered" : "\(count) notes recovered",
+                        ToastManager.shared.show(count == 1 ? "Note restored" : "\(count) notes restored",
                                                  systemImage: "arrow.uturn.backward")
                     }
                     .disabled(library.trashed.isEmpty)
                     Spacer()
-                    Button("Delete All Now", role: .destructive) { confirmEmpty = true }
+                    Button("Empty Recently Deleted", role: .destructive) { confirmEmpty = true }
                         .foregroundStyle(library.trashed.isEmpty ? Color.secondary : Color(.systemRed))
                         .disabled(library.trashed.isEmpty)
                 }
             }
             .confirmationDialog(
-                library.trashed.count == 1 ? "Delete this note for good?" : "Delete these \(library.trashed.count) notes for good?",
+                "Empty Recently Deleted?",
                 isPresented: $confirmEmpty,
                 titleVisibility: .visible
             ) {
-                Button("Delete for Good", role: .destructive) {
+                Button(library.trashed.count == 1 ? "Delete 1 Note" : "Delete \(library.trashed.count) Notes",
+                       role: .destructive) {
                     library.deleteForever(ids: library.trashed.map(\.id))
                 }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text("They can't be recovered after this, on this iPhone or your Mac.")
+                Text("Everything in Recently Deleted is deleted for good, on this iPhone and your Mac. This can't be undone.")
             }
         }
     }
 
-    private func recover(_ note: LibraryNote) {
+    private func restore(_ note: LibraryNote) {
         library.restore(id: note.id)
-        ToastManager.shared.show("Note recovered", systemImage: "arrow.uturn.backward")
+        ToastManager.shared.show("Note restored", systemImage: "arrow.uturn.backward")
     }
 
     private func caption(_ note: LibraryNote) -> String {

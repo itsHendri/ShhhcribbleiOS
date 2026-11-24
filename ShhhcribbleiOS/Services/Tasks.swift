@@ -17,6 +17,21 @@ struct TaskItem: Identifiable, Hashable, Sendable {
     var spokenText: String?
 }
 
+/// A spoken meeting waiting for a yes ("Meeting, Ana Tuesday at three"),
+/// shown as a card at the top of Tasks until it is added to the calendar or
+/// turned down. Nothing reaches the calendar before Add to Calendar.
+struct MeetingItem: Identifiable, Hashable, Sendable {
+    let id: UUID
+    var title: String
+    var start: Date?
+    var end: Date?
+    var allDay: Bool
+    /// The words as they were spoken.
+    var spokenText: String?
+    var createdAt: Date
+    var source: NoteSource
+}
+
 /// The task list's sections, in the order the screen shows them.
 struct TaskGroups: Equatable {
     var overdue: [TaskItem] = []
@@ -46,6 +61,8 @@ final class TaskList: ObservableObject {
     }()
 
     @Published private(set) var groups = TaskGroups()
+    /// Spoken meetings waiting for a yes, oldest first.
+    @Published private(set) var meetings: [MeetingItem] = []
 
     /// Called after every change to the stored notes, with all of them.
     /// Alerts (and later the widget) are brought in step from here.
@@ -79,6 +96,8 @@ final class TaskList: ObservableObject {
             done: sections.done.map(Self.item)
         )
         if fresh != groups { groups = fresh }
+        let waiting = store.pendingMeetings.map(Self.meeting)
+        if waiting != meetings { meetings = waiting }
     }
 
     func task(id: UUID) -> TaskItem? {
@@ -143,6 +162,63 @@ final class TaskList: ObservableObject {
         store.trashNote(id: id)
     }
 
+    /// Out of Recently Deleted again: the Undo after a delete.
+    func restore(id: UUID) {
+        store.restoreNote(id: id)
+    }
+
+    // MARK: Meetings
+
+    /// Adds a spoken meeting, waiting for a yes.
+    @discardableResult
+    func addMeeting(
+        title: String, start: Date?, end: Date?, allDay: Bool,
+        spokenText: String?, trigger: TriggerSource?, duration: TimeInterval?
+    ) -> UUID {
+        var note = Note(text: title)
+        note.eventState = .pending
+        note.eventStart = start
+        note.eventEnd = end
+        note.eventAllDay = allDay
+        note.origin = .phone
+        note.originDetail = trigger?.rawValue
+        note.rawText = spokenText
+        note.durationSec = duration
+        store.addNote(note)
+        return note.id
+    }
+
+    /// Change what the meeting will say before it is confirmed.
+    func changeMeeting(id: UUID, title: String, start: Date, end: Date, allDay: Bool) {
+        let title = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let current = store.notes.first { $0.id == id }?.text ?? ""
+        store.setNoteEvent(id: id, title: title.isEmpty ? current : title,
+                           start: start, end: end, allDay: allDay)
+    }
+
+    /// Settled first and written after, so a second tap can never add it
+    /// twice. Put back to waiting if the calendar refused. Nil on success,
+    /// else words to show.
+    func addMeetingToCalendar(id: UUID) async -> String? {
+        guard let meeting = meetings.first(where: { $0.id == id }) else { return nil }
+        store.setNoteEventState(id: id, .confirmed)
+        if let error = await CalendarWriter.add(meeting) {
+            store.setNoteEventState(id: id, .pending)
+            return error
+        }
+        return nil
+    }
+
+    /// "Not a Meeting": kept as a plain note, so nothing said is lost. With
+    /// `text`, the note gets those words (the undo of a spoken "Meeting").
+    func notAMeeting(id: UUID, text: String? = nil) {
+        store.setNoteEventState(id: id, .dismissed)
+        guard let text, var note = store.notes.first(where: { $0.id == id }), note.text != text else { return }
+        note.text = text
+        note.richText = nil
+        store.updateNote(note)
+    }
+
     /// Turns a task back into an ordinary note. With `text`, the note gets
     /// that text (the undo of a spoken "Reminder": the words as they were
     /// before the keyword was taken off).
@@ -152,6 +228,19 @@ final class TaskList: ObservableObject {
         note.text = text
         note.richText = nil
         store.updateNote(note)
+    }
+
+    private static func meeting(_ note: Note) -> MeetingItem {
+        MeetingItem(
+            id: note.id,
+            title: note.text,
+            start: note.eventStart,
+            end: note.eventEnd,
+            allDay: note.eventAllDay,
+            spokenText: note.rawText,
+            createdAt: note.createdAt,
+            source: note.origin == .recorder ? .recorder : (note.origin == .phone ? .iPhone : .typed)
+        )
     }
 
     private static func item(_ note: Note) -> TaskItem {

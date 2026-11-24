@@ -116,20 +116,26 @@ struct NotesListView: View {
                                 RecentlyDeletedLink(count: library.trashed.count, inList: true)
                             }
                         }
-                        Section {
-                            ForEach(filteredNotes) { note in
-                                if selecting {
-                                    SelectableRow(note: note, picked: picked.contains(note.id)) {
-                                        if picked.contains(note.id) { picked.remove(note.id) }
-                                        else { picked.insert(note.id) }
-                                    }
-                                } else {
-                                    NavigationLink(value: note.id) {
-                                        NoteRow(note: note,
-                                                onCopy: { copy(note) },
-                                                onDelete: { delete(note) })
+                        // Grouped by day, newest first (Hendri's pick C,
+                        // 2026-11-24, the same on the Mac).
+                        ForEach(NoteDay.groups(of: filteredNotes), id: \.start) { day in
+                            Section {
+                                ForEach(day.notes) { note in
+                                    if selecting {
+                                        SelectableRow(note: note, picked: picked.contains(note.id)) {
+                                            if picked.contains(note.id) { picked.remove(note.id) }
+                                            else { picked.insert(note.id) }
+                                        }
+                                    } else {
+                                        NavigationLink(value: note.id) {
+                                            NoteRow(note: note,
+                                                    onCopy: { copy(note) },
+                                                    onDelete: { delete(note) })
+                                        }
                                     }
                                 }
+                            } header: {
+                                Text(day.title)
                             }
                         }
                     }
@@ -195,16 +201,18 @@ struct NotesListView: View {
         Self.offerUndo(count: 1)
     }
 
-    /// The bar that follows any delete. Six seconds to take it back.
+    /// The line that follows any delete, at the bottom: "Moved to Recently
+    /// Deleted · Undo", six seconds (Hendri's pick, 2026-11-24, the same
+    /// words as the Mac).
     static func offerUndo(count: Int) {
         ToastManager.shared.show(
-            count == 1 ? "Note deleted" : "\(count) notes deleted",
+            count == 1 ? "Moved to Recently Deleted" : "\(count) notes moved to Recently Deleted",
             systemImage: "trash",
             actionLabel: "Undo"
         ) {
             let back = Library.shared.undoLastDelete()
             if back > 0 {
-                ToastManager.shared.show(back == 1 ? "Note recovered" : "\(back) notes recovered",
+                ToastManager.shared.show(back == 1 ? "Note restored" : "\(back) notes restored",
                                          systemImage: "arrow.uturn.backward")
             }
         }
@@ -293,35 +301,24 @@ private struct SearchBar: View {
     }
 }
 
+/// A note in the list: up to two lines of it, then time · where it was made
+/// · length, in words (Hendri's pick C, 2026-11-24). Copy lives inside the
+/// note; a long press still offers it here.
 private struct NoteRow: View {
     let note: LibraryNote
     let onCopy: () -> Void
     let onDelete: () -> Void
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(note.transcript)
-                    .foregroundStyle(.primary)
-                    .lineLimit(5)
-                Text(note.createdAt.formatted(date: .abbreviated, time: .shortened))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            Button(action: onCopy) {
-                Image(systemName: "doc.on.doc")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(Color(red: 0.25, green: 0.55, blue: 1.0))
-                    .frame(width: 36, height: 36)
-                    .background(
-                        Circle().fill(Color(red: 0.25, green: 0.55, blue: 1.0).opacity(0.12))
-                    )
-            }
-            .buttonStyle(.borderless)
-            .accessibilityLabel("Copy transcript")
+        VStack(alignment: .leading, spacing: 3) {
+            Text(note.transcript.trimmingCharacters(in: .whitespacesAndNewlines))
+                .foregroundStyle(.primary)
+                .lineLimit(2)
+            Text(NoteDay.meta(note))
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
+        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button(role: .destructive, action: onDelete) {
                 Label("Delete", systemImage: "trash")
@@ -335,6 +332,47 @@ private struct NoteRow: View {
                 Label("Delete", systemImage: "trash")
             }
         }
+    }
+}
+
+/// One day's notes in the list, and the words around a row.
+struct NoteDay {
+    let start: Date
+    let title: String
+    let notes: [LibraryNote]
+
+    /// Notes already newest first stay in that order inside each day.
+    static func groups(of notes: [LibraryNote], now: Date = Date(),
+                       calendar: Calendar = .current) -> [NoteDay] {
+        var days: [NoteDay] = []
+        for note in notes {
+            let start = calendar.startOfDay(for: note.createdAt)
+            if let last = days.last, last.start == start {
+                days[days.count - 1] = NoteDay(start: start, title: last.title, notes: last.notes + [note])
+            } else {
+                days.append(NoteDay(start: start, title: title(for: start, now: now, calendar: calendar), notes: [note]))
+            }
+        }
+        return days
+    }
+
+    static func title(for day: Date, now: Date = Date(), calendar: Calendar = .current) -> String {
+        if calendar.isDate(day, inSameDayAs: now) { return "Today" }
+        if let yesterday = calendar.date(byAdding: .day, value: -1, to: now),
+           calendar.isDate(day, inSameDayAs: yesterday) { return "Yesterday" }
+        let sameYear = calendar.component(.year, from: day) == calendar.component(.year, from: now)
+        let style = Date.FormatStyle(calendar: calendar).weekday(.wide).day().month(.wide)
+        return sameYear ? day.formatted(style) : day.formatted(style.year())
+    }
+
+    /// "13:05 · iPhone · 0:08". No length for a note that was typed.
+    static func meta(_ note: LibraryNote) -> String {
+        var parts = [note.createdAt.formatted(date: .omitted, time: .shortened), note.source.label]
+        if note.duration >= 1 {
+            let seconds = Int(note.duration.rounded())
+            parts.append(String(format: "%d:%02d", seconds / 60, seconds % 60))
+        }
+        return parts.joined(separator: " · ")
     }
 }
 
@@ -393,10 +431,10 @@ private struct SelectableRow: View {
                     .foregroundStyle(picked ? Color.accentColor : .secondary)
                     .frame(width: 28)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(note.transcript)
+                    Text(note.transcript.trimmingCharacters(in: .whitespacesAndNewlines))
                         .foregroundStyle(.primary)
-                        .lineLimit(3)
-                    Text(note.createdAt.formatted(date: .abbreviated, time: .shortened))
+                        .lineLimit(2)
+                    Text(NoteDay.meta(note))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

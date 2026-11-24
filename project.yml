@@ -84,6 +84,7 @@ targets:
             LSItemContentTypes:
               - public.audio
         NSMicrophoneUsageDescription: "Shhhcribble records audio to transcribe your speech. Recording only happens when you trigger it."
+        NSCalendarsWriteOnlyAccessUsageDescription: "Shhhcribble adds a meeting you spoke to your calendar, only when you tap Add to Calendar. It never reads your calendar."
         NSSupportsLiveActivities: true
         UIBackgroundModes:
           - audio

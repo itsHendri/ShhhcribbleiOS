@@ -29,6 +29,8 @@ What they agree on: a single delete gets an Undo, not a question; deleting many 
 
 - 2026-11-21: each note in Recently Deleted has a visible Recover button. Hendri, after the two-device test: "only had a recover all action though?" Recovering one had only been a swipe.
 
+- 2026-11-24, Hendri's alignment picks with the Mac (Mac canvas, rows 4 and 5): the words are Restore, Delete Now and Empty Recently Deleted on both apps (was Recover, Delete All Now). Undo is a dark line at the bottom, above the tab bar, "Moved to Recently Deleted · Undo", six seconds, as on the Mac. Deleting from the note screen or a task's sheet no longer asks first.
+
 ## Open
 - Nothing for now.
 - The Mac still deletes for good and has no bin screen yet (the Mac track's call). Notes binned on the phone leave the Mac's lists.

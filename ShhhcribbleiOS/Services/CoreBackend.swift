@@ -145,6 +145,12 @@ final class CoreBackend: LibraryBackend {
         }
         note.summaryGeneratedAt = row.summaryGeneratedAt
         note.deletedAt = row.deletedAt
+        switch row.origin {
+        case .phone: note.source = .iPhone
+        case .recorder: note.source = .recorder
+        case .typed: note.source = .typed
+        case .actionItem: note.source = .summary
+        }
         return note
     }
 }

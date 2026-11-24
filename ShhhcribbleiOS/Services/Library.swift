@@ -19,6 +19,8 @@ struct LibraryNote: Identifiable, Hashable, Sendable {
     var summaryGeneratedAt: Date?
     /// Set while the note is in Recently Deleted.
     var deletedAt: Date?
+    /// Where the note was made, shown in words on its row.
+    var source: NoteSource = .iPhone
 
     init(
         id: UUID = UUID(),
@@ -41,6 +43,18 @@ struct LibraryNote: Identifiable, Hashable, Sendable {
     /// Taken from the first sentence, as on the Mac. Notes are shared, so
     /// the phone has no title of its own to edit.
     var title: String { transcript.autoTitle() }
+}
+
+/// Where a note was made, in the words both apps show on a row
+/// (Hendri's pick C, 2026-11-24): "iPhone", "Recorder", "Typed".
+enum NoteSource: String, Hashable, Sendable {
+    case iPhone = "iPhone"
+    case recorder = "Recorder"
+    case typed = "Typed"
+    /// Added from a summary's to-do list.
+    case summary = "Summary"
+
+    var label: String { rawValue }
 }
 
 /// Something a summary found to do, with the sentence it came from.

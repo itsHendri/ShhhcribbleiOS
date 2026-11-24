@@ -4,7 +4,7 @@ import ShhhcribbleShared
 import SwiftUI
 import WidgetKit
 
-private let brandBlue = Color(red: 0.25, green: 0.55, blue: 1.0)
+private let brandBlue = WidgetLook.accent
 private let pillBackground = Color(red: 0.10, green: 0.10, blue: 0.12)
 
 struct ShhhcribbleLiveActivity: Widget {

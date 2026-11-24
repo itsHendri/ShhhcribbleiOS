@@ -149,9 +149,15 @@ struct TasksView: View {
                         if let due = task.dueAt, !task.done {
                             HStack(spacing: 6) {
                                 if overdue {
+                                    // The red fill of the widget and the Mac,
+                                    // always with the word (Hendri, 2026-11-24).
                                     Label("Overdue", systemImage: "exclamationmark.circle.fill")
                                         .font(.caption.weight(.semibold))
                                         .labelStyle(.titleAndIcon)
+                                        .foregroundStyle(OverdueLook.text)
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(OverdueLook.fill, in: RoundedRectangle(cornerRadius: 4))
                                 }
                                 Text(DueLabel.text(for: due, allDay: task.dueAllDay))
                                     .font(.caption)
@@ -448,4 +454,19 @@ private struct MeetingEditView: View {
         TaskList.shared.changeMeeting(id: meeting.id, title: title, start: s, end: e, allDay: allDay)
         dismiss()
     }
+}
+
+/// Overdue's colours, the same values as the widget and the Mac (Hendri's
+/// look pick, 2026-11-24). Until the core has a shared look file.
+enum OverdueLook {
+    static let fill = Color(UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 0.231, green: 0.039, blue: 0.016, alpha: 1) // #3B0A04
+            : UIColor(red: 0.992, green: 0.890, blue: 0.871, alpha: 1) // #FDE3DE
+    })
+    static let text = Color(UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 1.0, green: 0.706, blue: 0.659, alpha: 1)   // #FFB4A8
+            : UIColor(red: 0.541, green: 0.122, blue: 0.067, alpha: 1) // #8A1F11
+    })
 }

@@ -5,7 +5,7 @@ struct OnboardingView: View {
     @AppStorage("onboardingComplete") private var onboardingComplete: Bool = false
     @State private var page: Int = 0
 
-    private let accent = Color(red: 0.25, green: 0.55, blue: 1.0)
+    private let accent = Color.accentColor
 
     var body: some View {
         ZStack(alignment: .topTrailing) {

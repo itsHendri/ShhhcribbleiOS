@@ -103,7 +103,7 @@ private struct TabPill: View {
                 Text(label)
                     .font(.system(size: 11, weight: .medium))
             }
-            .foregroundStyle(selected ? Color(red: 0.25, green: 0.55, blue: 1.0) : .primary)
+            .foregroundStyle(selected ? Color.accentColor : .primary)
             .frame(width: 70, height: 52)
             .background {
                 if selected {
@@ -143,15 +143,15 @@ private struct ContinueRecordingButton: View {
         Button(action: start) {
             Image(systemName: "mic.fill")
                 .font(.system(size: 17, weight: .bold))
-                .foregroundStyle(Color(red: 0.25, green: 0.55, blue: 1.0))
+                .foregroundStyle(Color.accentColor)
                 .frame(width: 44, height: 44)
                 .background(
-                    Circle().fill(Color(red: 0.25, green: 0.55, blue: 1.0)
+                    Circle().fill(Color.accentColor
                                   .opacity(isEnabled ? 0.18 : 0.10))
                 )
                 .overlay(
                     Circle().strokeBorder(
-                        Color(red: 0.25, green: 0.55, blue: 1.0).opacity(0.35),
+                        Color.accentColor.opacity(0.35),
                         lineWidth: 0.75
                     )
                 )
@@ -186,8 +186,8 @@ private struct StartRecordingButton: View {
                 .frame(width: 56, height: 56)
                 .background(
                     Circle().fill(isEnabled
-                                  ? Color(red: 0.25, green: 0.55, blue: 1.0)
-                                  : Color(red: 0.25, green: 0.55, blue: 1.0).opacity(0.4))
+                                  ? Color.accentColor
+                                  : Color.accentColor.opacity(0.4))
                 )
                 .shadow(color: .black.opacity(0.22), radius: 8, y: 3)
         }
@@ -202,13 +202,13 @@ private struct StartRecordingButton: View {
         if let progress = downloadProgress {
             ZStack {
                 Circle()
-                    .stroke(Color(red: 0.25, green: 0.55, blue: 1.0).opacity(0.18),
+                    .stroke(Color.accentColor.opacity(0.18),
                             lineWidth: 3)
                 Circle()
                     // Floor at a tiny sliver so the ring is visible the
                     // instant the download begins, even at fraction ≈ 0.
                     .trim(from: 0, to: max(0.015, progress))
-                    .stroke(Color(red: 0.25, green: 0.55, blue: 1.0),
+                    .stroke(Color.accentColor,
                             style: StrokeStyle(lineWidth: 3, lineCap: .round))
                     .rotationEffect(.degrees(-90))
                     .animation(.easeOut(duration: 0.25), value: progress)
@@ -321,7 +321,7 @@ struct ToastOverlay: View {
         HStack(spacing: 10) {
             Image(systemName: toast.systemImage)
                 .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(Color(red: 0.25, green: 0.55, blue: 1.0))
+                .foregroundStyle(Color.accentColor)
             Text(toast.message)
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(.primary)

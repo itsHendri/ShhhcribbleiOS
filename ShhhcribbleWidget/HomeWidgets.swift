@@ -13,27 +13,28 @@ import WidgetKit
 // MARK: - Look
 
 enum WidgetLook {
-    /// The violet of the app icon. Light and dark values keep text on it,
-    /// and it on the card, above 4.5:1.
+    /// The one blue of the Mac, the iPhone and the widget (Hendri's pick,
+    /// 2026-11-24): #006AFA in light, #3D8BFF in dark. Above 4.5:1 on the
+    /// system widget background in both.
     static let accent = Color(UIColor { traits in
         traits.userInterfaceStyle == .dark
-            ? UIColor(red: 0.663, green: 0.616, blue: 1.0, alpha: 1)   // #A99DFF
-            : UIColor(red: 0.333, green: 0.282, blue: 0.878, alpha: 1) // #5548E0
+            ? UIColor(red: 0.239, green: 0.545, blue: 1.0, alpha: 1)   // #3D8BFF
+            : UIColor(red: 0.0, green: 0.416, blue: 0.980, alpha: 1)   // #006AFA
     })
-    static let onAccent = Color(UIColor { traits in
-        traits.userInterfaceStyle == .dark
-            ? UIColor(red: 0.071, green: 0.047, blue: 0.227, alpha: 1) // #120C3A
-            : UIColor(red: 0.984, green: 0.953, blue: 0.918, alpha: 1) // #FBF3EA
-    })
+    /// Icons on the blue: white, 4.7:1 in light and 3.3:1 in dark (icons
+    /// need 3:1).
+    static let onAccent = Color.white
+    /// Overdue: a soft red fill with dark red words, always the word
+    /// "Overdue", never the colour alone.
     static let overdueFill = Color(UIColor { traits in
         traits.userInterfaceStyle == .dark
-            ? UIColor(red: 1.0, green: 0.706, blue: 0.659, alpha: 1)   // #FFB4A8
-            : UIColor(red: 0.541, green: 0.122, blue: 0.067, alpha: 1) // #8A1F11
+            ? UIColor(red: 0.231, green: 0.039, blue: 0.016, alpha: 1) // #3B0A04
+            : UIColor(red: 0.992, green: 0.890, blue: 0.871, alpha: 1) // #FDE3DE
     })
     static let overdueText = Color(UIColor { traits in
         traits.userInterfaceStyle == .dark
-            ? UIColor(red: 0.231, green: 0.039, blue: 0.016, alpha: 1) // #3B0A04
-            : .white
+            ? UIColor(red: 1.0, green: 0.706, blue: 0.659, alpha: 1)   // #FFB4A8
+            : UIColor(red: 0.541, green: 0.122, blue: 0.067, alpha: 1) // #8A1F11
     })
 }
 

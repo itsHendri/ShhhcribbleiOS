@@ -5,7 +5,7 @@
 Read `../../docs/ECOSYSTEM.md` first. Where it and this file disagree, it wins.
 
 - This app is revived. It shares one library (notes, tasks, reminders) with the Mac app, replaces Apple Reminders on the phone, and is a second receiver for the pocket recorder.
-- The paid Apple Developer Program is in place. Team `L9T3PX7HVH` is the paid team, not a Personal Team. The App Group, the home-screen widget and the keyboard extension are unblocked. Every "Personal Team" workaround below is due for removal.
+- The paid Apple Developer Program is in place. Team `L9T3PX7HVH` is the paid team. The App Group is on the app and the widget; Stop and Cancel on the Live Activity run their intents in place (`openAppWhenRun: false`). The old free-team workarounds are gone (tidied 2026-11-24).
 - Reopened decisions (they no longer apply as written below): "No LLM post-processing, ever", "No AI summaries", "No iCloud sync". Cleanup and summaries run on-device with the same guards as the Mac app. Sync is the user's own iCloud, opt-in, off by default.
 - Storage is the shared library, `ShhhcribbleCore`, a local Swift package at `../mac-app/Core` (SQLite, schema owned by the Mac track). This repo builds only with the Mac repo checked out beside it. SwiftData is gone; the old SwiftData file is left on disk, unread.
 - The database lives in the App Group container (`Library/Shhhcribble/library.sqlite`, three files while open). Only the app opens `TranscriptStore` (`SharedLibrary.store`); the widget and keyboard use the core's `LibraryReader`. Tests get a store at a temp path.
@@ -28,7 +28,7 @@ Read `../../docs/ECOSYSTEM.md` first. Where it and this file disagree, it wins.
 - Tasks widget: direction D, Tasks plus capture (`docs/design/tasks-widget.md`).
 - Mac and iPhone alignment (Hendri's picks, 2026-11-24, Mac canvas page "? Review" rows 1 to 6; list in the shared notes `mac-track-a-ux-round-picks-2026-11-24.md`):
   - Notes list rows: two lines of the note, then "time · source · length" (`NoteSource`: iPhone / Recorder / Typed / Summary), grouped by day (Today, Yesterday, then the date). No copy button on the row; Copy is in the note's toolbar (long press still offers it).
-  - Undo after any delete (note, several, task, note screen): the dark line at the bottom above the tab bar, "Moved to Recently Deleted · Undo", six seconds. No "Delete this?" question first. Any toast with a button is that line; plain confirmations stay at the top.
+  - Undo after any delete (note, several, task, note screen): the dark line at the bottom above the tab bar, "Moved to Recently Deleted · Undo", six seconds. No "Delete this?" question first. Any toast with a button is that line; plain confirmations sit in the same place, never over a title. The tab bar and play button step aside while the keyboard is up.
   - Recently Deleted words, the same as the Mac: Restore, Restore All, Delete Now, Empty Recently Deleted.
   - The look (Hendri's pick C, 2026-11-24, all three surfaces): one blue, #0064EB light / #3D8BFF dark, in the `AccentColor` asset of the app and the widget (global accent set in project.yml) and `WidgetLook.accent`; no hard-coded blue anywhere. System backgrounds; the widget's violet and cream are gone. Overdue: fill #FDE3DE / words #8A1F11 in light, #3B0A04 / #FFB4A8 in dark, always the word ("OverdueLook" in TasksView, "WidgetLook" in the widget). Round checkboxes. Filled blue buttons and round buttons use the light-mode blue in both modes (`Color.accentFill`, white words 5.2:1), and blue words on grey buttons are #5A9CFF in dark (`Color.accentOnGrey`) (Hendri's pick C, 2026-11-24; white on #3D8BFF was 3.3:1; the grey-button blue is #005EDD in light, 4.9:1 on the phone's #EDEDEF). The values come from the core's `Look` (`Color(look:)` in `LibraryLocation.swift`); the AccentColor assets repeat the accent because the system tint needs an asset. Row words and day headings come from the core's `ShelfText`. A summary's to-do goes to Tasks through `promoteActionItem` with the note's id, so it is added once and shows "In Tasks" after.
   - A spoken "Meeting, ..." is routed on the phone now: a card under "To confirm" at the top of Tasks (what, when, what was said; Add to Calendar / Change / Not a Meeting), Undo on the toast turns it back into the note as spoken. Add to Calendar asks for write-only calendar access (`Services/CalendarWriter.swift`); nothing is written before that tap.
@@ -361,8 +361,8 @@ The keyboard extension (`ShhhcribbleKeyboard`) injects transcribed text directly
 ## Build sequence
 
 **Sprint 1 — Foundation**
-1. ✅ Re-sign all targets under your Apple Developer team (Personal Team `L9T3PX7HVH` pinned in `project.yml`)
-2. ⏸ Set up App Group `group.com.shhhcribble` on all targets — **deferred to Sprint 5**, hard-blocked on paid Developer Program (Personal Team can't include `application-groups` entitlement). Until then, App Group entries are stripped from `*.entitlements` and `LiveActivityIntent` uses `openAppWhenRun: true` as a workaround.
+1. ✅ Re-sign all targets under the Apple Developer team (`L9T3PX7HVH` pinned in `project.yml`)
+2. ✅ App Group `group.com.shhhcribble` on the app and the widget (restored 2026-11-19 with the paid team).
 3. ✅ Audit existing Swift files — refactor into feature folder structure above
 4. ✅ Replace any UserDefaults note persistence with SwiftData `Note` model
 5. ✅ Add Control Center widget — lives as `RecordControlWidget.swift` inside `ShhhcribbleWidget/` rather than a separate target
@@ -402,12 +402,7 @@ B4. ✅ Markdown view/edit auto-toggle on `NoteDetailView`. New [String+Markdown
 B5. ✅ Sub-feature B (image attachments) deliberately deferred. Per the [PR-bundling memory](file:.claude/projects/-Users-hendri-ShhhcribbleiOS/memory/feedback_pr_bundling_strategy.md), image attachments require an `Attachment` `@Model` + `@Relationship`, which forces the first `VersionedSchema` migration. That gets its own PR + TestFlight cycle so any migration regression is observable in isolation. Sprint 4.5+1 ships only the additive view-layer + service-layer changes.
 
 **Sprint 5 — Keyboard extension (Phase 2)**
-19. **PREREQ — Restore App Group + paid Developer Program signing.**
-    - Enrol in paid Apple Developer Program; pin paid team ID in `project.yml`.
-    - Restore `application-groups` entry to `ShhhcribbleiOS.entitlements` and `ShhhcribbleWidget.entitlements`; add new `ShhhcribbleKeyboard.entitlements` with the same group.
-    - Flip `openAppWhenRun: true` → `false` on `StopRecordingIntent` and `CancelRecordingIntent`.
-    - Drop the `.widgetURL(shhhcribble://open)` lock-screen workaround — per-button intents take over again.
-    - Verify install on device end-to-end before adding any keyboard code (see Working notes — App Group + Personal Team).
+19. ✅ Prerequisite done 2026-11-19: paid team, App Group, Live Activity intents in place.
 20. `ShhhcribbleKeyboard` target + `UIInputViewController`
 21. App Group microphone handoff flow (main app records, writes transcript to shared container; keyboard reads from container)
 22. `UITextDocumentProxy` text injection — at this point ClipboardService snapshot/restore wraps the autopaste so the user's prior clipboard survives
@@ -446,7 +441,7 @@ These are gotchas and conventions discovered while building Sprint 1 + the recor
 
 ### Build & install on a physical iPhone (CLI)
 
-Xcode UI is fine, but Cmd-R from Xcode silently fails when the App Group entitlement is in play under a free Personal Team. Direct `devicectl` install is the reliable path during development:
+Xcode's Run works with the paid team; from the command line, build and install with `devicectl`:
 
 ```bash
 xcodebuild -project ShhhcribbleiOS.xcodeproj -scheme ShhhcribbleiOS \
@@ -460,35 +455,9 @@ xcrun devicectl device install app \
 
 Get the device UDID with `xcrun devicectl list devices`. The `Failed to load provisioning paramter list...code=1002 "No provider was found"` warning that `devicectl` always emits is harmless — installation completes anyway.
 
-### Personal Team signing — pin the team ID in `project.yml`
+### Team ID pinned in `project.yml`
 
-`xcodegen` regenerates the project on every run and **blanks out** the development team selection from the pbxproj. To stop the manual "set team in Xcode every time" loop, the Personal Team ID is pinned in [project.yml](project.yml) under each target's `settings.base`:
-
-```yaml
-DEVELOPMENT_TEAM: L9T3PX7HVH
-```
-
-That's the user's personal team. Do not commit a paid program team ID here — Personal Team is intentional for development.
-
-### App Group + Personal Team don't mix
-
-Personal Team accounts cannot include the `com.apple.security.application-groups` entitlement in their auto-generated provisioning profiles. With it set, Xcode "Build Succeeded" but install silently fails (no error in the navigator). The App Group entries in [ShhhcribbleiOS.entitlements](ShhhcribbleiOS/ShhhcribbleiOS.entitlements) and [ShhhcribbleWidget.entitlements](ShhhcribbleWidget/ShhhcribbleWidget.entitlements) are intentionally **stripped** for now, with a marker comment in `project.yml` so we restore them when the app moves to a paid Apple Developer Program account.
-
-**Restore App Group when:**
-1. User enrols in paid Apple Developer Program
-2. Sprint 5 begins (keyboard extension needs the App Group container to coordinate with main app)
-
-### LiveActivityIntent + Personal Team
-
-`LiveActivityIntent.perform()` is meant to run in the main app's process when the user taps a button on a Live Activity. With a free Personal Team and **no App Group entitlement**, the cross-process routing from widget extension → main app silently fails (intent never fires). Workaround currently in place:
-
-```swift
-public static var openAppWhenRun: Bool = true
-```
-
-Both `StopRecordingIntent` and `CancelRecordingIntent` use `openAppWhenRun: true` so tapping them from the lock screen forces unlock + foreground. Comment markers in both files note when to flip back to `false` (after paid program + App Group restored).
-
-The Cancel/Stop buttons on the lock-screen Live Activity card are now **decorative only**. The whole card is tappable via `.widgetURL(URL(string: "shhhcribble://open")!)` which deep-links into the app — user stops via the in-app overlay. This avoids relying on intent routing entirely. Restore the per-button intents in Sprint 5 when the App Group comes back.
+`xcodegen` regenerates the project on every run and blanks out the team chosen in Xcode, so `DEVELOPMENT_TEAM: L9T3PX7HVH` (the paid team) is pinned under each target's `settings.base` in [project.yml](project.yml).
 
 ### Diagnostic logging on physical devices
 

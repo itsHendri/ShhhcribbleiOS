@@ -15,10 +15,6 @@ enum SharedLibrary {
     static let store: TranscriptStore = {
         let store = TranscriptStore.makeDefault(at: databaseURL(), runLegacyMacMigrations: false)
         store.observeOtherProcesses()
-        #if DEBUG
-        NoteDetailsRestore.runIfPresent(store: store)
-        NoteDetailsRestore.resendIfPresent(store: store)
-        #endif
         VocabularyMigration.runIfNeeded(into: store)
         Vocabulary.shared.follow(store)
         return store
@@ -154,61 +150,3 @@ final class CoreBackend: LibraryBackend {
         return note
     }
 }
-
-#if DEBUG
-/// One-off repair, debug builds only: puts back a note's origin, raw words
-/// and length from a file copied into the app's Documents folder over the
-/// cable (`restore-note-details.json`, a list of {id, origin, originDetail,
-/// rawText, durationSec}). Only fills fields that are empty, then renames the
-/// file so it never runs twice. Written after sync dropped these fields
-/// (2026-11-21, fixed in the core at a2587c6). The values stay out of git.
-@MainActor
-enum NoteDetailsRestore {
-    private struct Entry: Decodable {
-        let id: UUID
-        let origin: String?
-        let originDetail: String?
-        let rawText: String?
-        let durationSec: Double?
-    }
-
-    static func runIfPresent(store: TranscriptStore) {
-        let fm = FileManager.default
-        guard let docs = fm.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
-        let file = docs.appendingPathComponent("restore-note-details.json")
-        guard let data = try? Data(contentsOf: file),
-              let entries = try? JSONDecoder().decode([Entry].self, from: data) else { return }
-        var restored = 0
-        for entry in entries {
-            guard var row = store.notes.first(where: { $0.id == entry.id }) else { continue }
-            if row.rawText == nil, let raw = entry.rawText { row.rawText = raw }
-            if row.durationSec == nil, let d = entry.durationSec { row.durationSec = d }
-            if row.origin == .typed, let o = entry.origin.flatMap(NoteOrigin.init(rawValue:)) { row.origin = o }
-            if row.originDetail == nil, let detail = entry.originDetail { row.originDetail = detail }
-            store.updateNote(row, modifiedAt: row.modifiedAt)
-            restored += 1
-        }
-        try? fm.moveItem(at: file, to: docs.appendingPathComponent("restore-note-details.done.json"))
-        UserDefaults.standard.set(restored, forKey: "debugNoteDetailsRestored")
-    }
-
-    /// Re-saves the notes listed in `resend-note-ids.json` (an array of
-    /// ids) as a fresh edit, so sync sees a change and sends them. Used once,
-    /// for notes repaired before the core sent kept fields up (10b435a).
-    static func resendIfPresent(store: TranscriptStore) {
-        let fm = FileManager.default
-        guard let docs = fm.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
-        let file = docs.appendingPathComponent("resend-note-ids.json")
-        guard let data = try? Data(contentsOf: file),
-              let ids = try? JSONDecoder().decode([UUID].self, from: data) else { return }
-        var sent = 0
-        for id in ids {
-            guard let row = store.notes.first(where: { $0.id == id }) else { continue }
-            store.updateNote(row)
-            sent += 1
-        }
-        try? fm.moveItem(at: file, to: docs.appendingPathComponent("resend-note-ids.done.json"))
-        UserDefaults.standard.set(sent, forKey: "debugNotesResent")
-    }
-}
-#endif

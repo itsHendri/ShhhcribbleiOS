@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Tracks which note (if any) is currently presented in NoteDetailView. Used
 /// by the floating action area to surface a "Continue recording" mini button
@@ -27,6 +28,7 @@ struct ContentView: View {
     @StateObject private var noteFocus = NoteFocus.shared
     @ObservedObject private var router = AppRouter.shared
     private var tab: BottomTab { router.tab }
+    @State private var keyboardUp = false
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -63,10 +65,21 @@ struct ContentView: View {
             }
             .padding(.horizontal, 18)
             .padding(.bottom, 8)
+            // Out of the way while typing, instead of riding up over the
+            // field (the Tasks "New task" field) on top of the keyboard.
+            .opacity(keyboardUp ? 0 : 1)
+            .allowsHitTesting(!keyboardUp)
+            .accessibilityHidden(keyboardUp)
             .zIndex(2) // keep the tab bar + play button above any underlying scroll views
 
             ToastOverlay()
                 .zIndex(3)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+            keyboardUp = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+            keyboardUp = false
         }
         .sheet(isPresented: $router.showingBin) {
             RecentlyDeletedView()
@@ -307,12 +320,16 @@ struct ToastOverlay: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                         .id(toast.id)
                 } else {
+                    // At the bottom, where the Undo line sits, so it never
+                    // covers a screen's title (as on the Mac).
                     confirmation(toast)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                         .id(toast.id)
                 }
             }
         }
+        // Not pushed up by the keyboard either.
+        .ignoresSafeArea(.keyboard, edges: .bottom)
         // Only a toast with a button takes touches.
         .allowsHitTesting(manager.current?.actionLabel != nil)
     }
@@ -331,8 +348,8 @@ struct ToastOverlay: View {
         .background(Capsule().fill(.regularMaterial))
         .overlay(Capsule().strokeBorder(.white.opacity(0.06), lineWidth: 0.5))
         .shadow(color: .black.opacity(0.22), radius: 14, y: 6)
-        .padding(.top, 12)
-        .transition(.move(edge: .top).combined(with: .opacity))
+        .padding(.bottom, 84)
+        .transition(.move(edge: .bottom).combined(with: .opacity))
     }
 }
 

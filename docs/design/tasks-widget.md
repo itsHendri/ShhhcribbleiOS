@@ -50,3 +50,6 @@ Hendri picked B, ticks on the right, over the suggested A. On the canvas page "A
 
 ## Explicitly deferred
 - A to C, E and F from round 1. Not picked; kept on the Explorations page as history.
+
+## Tick position (2026-11-24)
+Kept as is, on purpose: the tick is on the right in the widget and on the left in the app's Tasks tab. Hendri: "we can keep as is, on mobile is so we are closer to thumb" (the widget's taps all sit in the right-hand column, near the thumb).
